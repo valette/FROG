@@ -30,7 +30,7 @@ This code is distributed under the CeCILL-B license (BSD-compatible)
 
 ### Usage ###
 
-Groupwise registration is computed vie the run.sh script, in three steps:
+Groupwise registration is computed via the run.sh script, in three steps:
 * Keypoint extraction from input images
 * Keypoint matching
 * groupwise registration of keypoints
