@@ -17,8 +17,10 @@ This code is distributed under the CeCILL-B license (BSD-compatible)
 (copyright CNRS, INSA-Lyon, UCBL, INSERM.)
 
 ###  Dependencies ###
-* VTK www.vtk.org
+* Boost www.boost.org
 * CMAKE www.cmake.org
+* OpenCV www.opencv.org
+* VTK www.vtk.org
 
 ###  Simple compilation HowTo under Linux ###
 	git clone https://github.com/valette/FROG.git
