@@ -13,7 +13,7 @@ function launch {
 
 # Inspired from NiftyReg script : https://sourceforge.net/p/niftyreg/git/ci/master/tree/reg-apps/groupwise_niftyreg_run.sh
 
-if [ $# -lt 1 ]
+if [ $# -lt 2 ]
 then
 	echo ""
 	echo "*******************************************************************************"
