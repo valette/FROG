@@ -1,12 +1,12 @@
 #!/bin/sh
 
-# Inspired from Niftireg script : https://sourceforge.net/p/niftyreg/git/ci/master/tree/reg-apps/groupwise_niftyreg_params.sh
+# Inspired by Niftireg script : https://sourceforge.net/p/niftyreg/git/ci/master/tree/reg-apps/groupwise_niftyreg_params.sh
 
 # Array that contains the input images to create the atlas
 export IMG_INPUT=(`ls ~/path/to/images/*.nii.gz`)
 
 # folder where the results will be written
-export RES_FOLDER=`pwd`/registration
+export RES_FOLDER=`pwd`/output
 
 # SURF parameters
 export SPACING=0.75
