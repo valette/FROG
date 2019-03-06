@@ -381,9 +381,7 @@ bool ImageGroup::updateDeformableTransforms() {
 
 	if ( this->guaranteeDiffeomorphism && ( nBigCoeffs > 0 ) ) {
 
-		cout << endl<< nBigCoeffs << "/" << nCoeffs
-			<< " non guaranteed diffeomorphism coefficient(s)" << endl;
-
+		cout << endl<< "Diffeomorphism is not guaranteed : Iteration canceled" << endl;
 		return false;
 
 	}
