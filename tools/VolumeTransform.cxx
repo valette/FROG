@@ -1,7 +1,7 @@
 /*=========================================================================
 
 Program:   VolumeTransform : Transform a volume
-Module:    vtkOpenSURF
+Module:    FROG
 Language:  C++
 Date:      2013/11
 Auteur:   Sebastien Valette

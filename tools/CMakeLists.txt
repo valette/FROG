@@ -2,6 +2,9 @@
 find_package(VTK REQUIRED)
 include ("${VTK_USE_FILE}")
 
+ADD_EXECUTABLE( CheckDiffeomorphism CheckDiffeomorphism.cxx )
+TARGET_LINK_LIBRARIES(CheckDiffeomorphism ${VTK_LIBRARIES} )
+
 ADD_EXECUTABLE( DummyVolumeGenerator DummyVolumeGenerator.cxx )
 TARGET_LINK_LIBRARIES(DummyVolumeGenerator ${VTK_LIBRARIES} )
 
