@@ -410,6 +410,8 @@ bool ImageGroup::updateDeformableTransforms() {
 
 		}
 
+		image.transform->Update();
+
 	}
 
 	return true;
@@ -738,6 +740,8 @@ void ImageGroup::updateLinearTransforms() {
 			image.center[ k ] = sPos[ k ] / sWeight;
 
 		}
+
+		image.transform->Update();
 
 	}
 

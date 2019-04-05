@@ -49,8 +49,8 @@ vtkGeneralTransform *readTFM ( const char *fileName ) {
 	}
 
 	file.ignore ( std::numeric_limits< std::streamsize >::max(), '\n' );
-
 	linear->SetInput( matrix );
+	linear->Update();
 	transform->Concatenate( linear );
 
 //	std::cout << "translation : " << translation[ 0 ] << " " << translation[ 1 ] << " " << translation[ 2 ] << std::endl;
@@ -104,6 +104,7 @@ vtkGeneralTransform *readTFM ( const char *fileName ) {
 //		vtkMyBSplineTransform *trans = vtkMyBSplineTransform::New();
 		vtkBSplineTransform *trans = vtkBSplineTransform::New();
 		trans->SetCoefficientData( coeffs );
+		trans->Update();
 		transform->Concatenate( trans );
 
 		if ( file.eof() ) {
