@@ -59,7 +59,7 @@ cd $RES_FOLDER
 N=0;
 SPACING=${2:--1}
 
-for (( CUR_IT=0; CUR_IT<3; CUR_IT++ ))
+for (( CUR_IT=0; CUR_IT<${IMG_NUMBER}; CUR_IT++ ))
 do
 	IMG=${IMG_INPUT[CUR_IT]};
 	TRANS=transformed$CUR_IT.nii.gz
