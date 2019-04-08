@@ -22,8 +22,10 @@ Auteur:   Sebastien Valette
 int main( int argc, char *argv[] ) {
 
 	if ( argc < 3 ) {
+
 		std::cout << "Usage : CheckDiffeomorphism image transform [spacing]" << std::endl;
 		exit( 1 );
+
 	}
 
 	char *file = argv[ 1 ];
@@ -46,36 +48,20 @@ int main( int argc, char *argv[] ) {
 		vtkImageResize *resize = vtkImageResize::New();
 		resize->SetResizeMethodToOutputSpacing();
 		double sp = atof( argv[ 3 ] );
-		cout << "Resizing image with spacing : " << sp << endl;
-		resize->SetOutputSpacing( sp, sp, sp );
-		resize->SetInputData( image );
-		resize->Update();
-		image = resize->GetOutput();
+
+		if ( sp > 0 ) {
+
+			cout << "Resizing image with spacing : " << sp << endl;
+			resize->SetOutputSpacing( sp, sp, sp );
+			resize->SetInputData( image );
+			resize->Update();
+			image = resize->GetOutput();
+
+		}
 
 	}
 
-	double in[ 3 ], out[ 3 ], derivative[3][3];
-	double *bounds = image->GetBounds();
-	std::cout << "image bounds :";
-	for ( unsigned int i = 0; i < 6; i++) {
-		std::cout << bounds[ i ] << " ";
-	}
-	std::cout << std::endl;
-
-	for ( int i = 0; i < 3; i++ )
-		in[ i ] = 0.5* ( bounds[ 2 * i ] + bounds[ 1 + 2 * i ] );
-
-	transform->InternalTransformDerivative( in, out, derivative );
-	float d = vtkMath::Determinant3x3( derivative );
-
-	cout << "Jacobian determinant at "
-		<< in[ 0 ] << " " << in[ 1 ] << " " << in[ 2 ] << " : " << d << endl;;
-
-	cout << "Derivative : " << endl;
-	for ( int i = 0; i < 3; i++ )
-		cout << derivative[ i ][ 0 ] << " " << derivative[ i ][ 1 ] << " " << derivative[ i ][ 2 ] << endl;
-
-	double origin[ 3 ], spacing[ 3 ];
+	double in[ 3 ], out[ 3 ], derivative[3][3], origin[ 3 ], spacing[ 3 ];
 	int dimensions[ 3 ];
 	vtkIdType inc[ 3 ];
 	image->GetOrigin( origin );
@@ -109,5 +95,7 @@ int main( int argc, char *argv[] ) {
 	cout << n << " negative jacobian determinant values ("
 		<< std::setprecision( 3 ) << (float) 100.0 * n / 
 		( dimensions[ 0 ] * dimensions[ 1 ] * dimensions[ 2 ] ) << "%) " << endl;;
+
+	return n > 0;
 
 }
