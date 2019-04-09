@@ -1,6 +1,6 @@
 #!/bin/bash
 
-start=`date +%s`
+startTime=`date +%s`
 
 function launch {
 
@@ -87,6 +87,8 @@ do
 
 done
 
+matchTime=`date +%s`
+
 OUTPUT_PAIRS=pairs.bin
 launch "$MATCH $CSVFile -o $OUTPUT_PAIRS -d $MAX_DISTANCE"
 
@@ -97,8 +99,13 @@ else
 	LOPTIONS=""
 fi
 
+registrationTime=`date +%s`
+
 launch "$REG $OUTPUT_PAIRS $LOPTIONS"
 
-end=`date +%s`
-runtime=$((end-start))
-echo "Total registration time : $runtime seconds"
+endTime=`date +%s`
+
+echo "Keypoint extraction time : $((matchTime-startTime)) seconds"
+echo "Match time : $((registrationTime-matchTime)) seconds"
+echo "Registration time : $((endTime-registrationTime)) seconds"
+echo "Total registration time : $((endTime-startTime)) seconds"
