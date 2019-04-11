@@ -1,0 +1,143 @@
+{
+
+	"actions": {
+		"frog" : {
+			"parameters" : [
+				{
+					"name" : "inputPairs",
+					"required" : true,
+					"type" : "file"
+				},
+				{
+					"prefix" : "-si ",
+					"name" : "statsInterval",
+					"type" : "int"
+				},
+				{
+					"prefix" : "-di ",
+					"name" : "deformableIterations",
+					"type" : "int"
+				},
+				{
+					"prefix" : "-dl ",
+					"name" : "deformableLevels",
+					"type" : "int"
+				},
+				{
+					"prefix" : "-da ",
+					"name" : "deformableAlpha",
+					"type" : "float"
+				},
+				{
+					"prefix" : "-g ",
+					"name" : "initialGridSize",
+					"type" : "float"
+				},
+				{
+					"prefix" : "-l ",
+					"name" : "landmarks",
+					"type" : "directory"
+				},
+				{
+					"prefix" : "-li ",
+					"name" : "linearIterations",
+					"type" : "int"
+				},
+				{
+					"prefix" : "-dstats ",
+					"name" : "displayStats",
+					"type" : "int"
+				},
+				{
+					"prefix" : "-dlinear ",
+					"name" : "displayLinear",
+					"type" : "int"
+				},
+				{
+					"prefix" : "-t ",
+					"name" : "inlierThreshold",
+					"type" : "float"
+				}
+			],
+			"executable" : "bin/frog"
+		},
+		"match" : {
+			"parameters" : [
+				{
+					"name" : "inputFile",
+					"required" : true,
+					"type" : "file"
+				},
+				{
+					"name" : "numberOfVolumes",
+					"type" : "int",
+					"prefix" : "-n "
+				},
+				{
+					"name" : "numberOfThreads",
+					"type" : "int",
+					"prefix" : "-nt "
+				},
+				{
+
+					"name" : "numberOfPointsPerImage",
+					"type" : "int",
+					"prefix" : "-np "
+
+				},
+				{
+
+					"name" : "responseThreshold",
+					"type" : "float",
+					"prefix" : "-sp "
+
+				},
+				{
+
+					"name" : "distance",
+					"type" : "float",
+					"prefix" : "-d "
+
+				},
+				{
+
+					"name" : "all",
+					"type" : "int",
+					"prefix" : "-all "
+
+				},
+				{
+
+					"name" : "distanceToSecond",
+					"type" : "float",
+					"prefix" : "-d2 "
+
+				},
+				{
+
+					"name" : "zMin",
+					"type" : "float",
+					"prefix" : "-zmin "
+
+				},
+				{
+
+					"name" : "zMax",
+					"type" : "float",
+					"prefix" : "-zmax "
+
+				},
+				{
+					"text" : "-o pairs.bin"
+				}
+
+			],
+			"output" : {
+				"pairs" : "pairs.bin"
+			},
+
+			"executable" : "bin/match"
+
+		}
+	}
+}
