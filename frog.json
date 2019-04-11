@@ -138,6 +138,122 @@
 
 			"executable" : "bin/match"
 
+		},
+		"VolumeTransform" : {
+
+			"parameters" : [
+				{
+					"name" : "source",
+					"type" : "file",
+					"required" : true
+				},
+				{
+					"name" : "reference",
+					"type" : "file",
+					"required" : true
+				},
+				{
+					"name" : "transform",
+					"prefix" : "-t ",
+					"type" : "file"
+				},
+				{
+					"name" : "outputFileName",
+					"prefix" : "-o ",
+					"type" : "string"
+				},
+				{
+					"name" : "inverseTransform",
+					"prefix" : "-ti ",
+					"type" : "file"
+				},
+				{
+					"name" : "invertX",
+					"prefix" : "-rx ",
+					"type" : "int"
+				}
+			],
+			"executable" : "bin/VolumeTransform"
+		},
+		"SURF3D": {
+			"parameters": [
+				{
+					"name": "inputVolume",
+					"aliases" : [ "input_volume" ],
+					"type": "file",
+					"required": true
+				},
+				{
+					"prefix": "-type ",
+					"name" : "type",
+					"type": "int",
+					"description" : "desccriptor type : 0 for SURF, 1 for raw sub volumes"
+				},
+				{
+					"prefix": "-n ",
+					"name" : "numberOfPoints",
+					"type": "int",
+					"description" : "maxium number of points to extract"
+				},
+				{
+					"prefix": "-s ",
+					"name" : "spacing",
+					"aliases": [ "target_spacing" ],
+					"type": "float"
+				},
+				{
+					"prefix": "-d ",
+					"name": "maximum_dimension",
+					"type": "int"
+				},
+				{
+					"prefix": "-t ",
+					"name": "threshold",
+					"type": "float"
+				},
+				{
+					"prefix": "-m ",
+					"name": "mask",
+					"type": "file"
+				},
+				{
+					"prefix": "-json ",
+					"name": "writeJSON",
+					"type": "int"
+				},
+				{
+					"prefix": "-bin ",
+					"name": "writeBIN",
+					"type": "int"
+				},
+				{
+					"prefix": "-csv ",
+					"name": "writeCSV",
+					"type": "int"
+				},
+				{
+					"prefix": "-csvgz ",
+					"name": "writeCSVGZ",
+					"type": "int"
+				},
+				{
+					"prefix": "-r ",
+					"name": "radius",
+					"type": "int"
+				},
+				{
+
+					"name" : "outputFileName",
+					"type" : "string",
+					"prefix" : "-o "
+
+				}
+			],
+			"output" : {
+				"points" : "points.csv.gz"
+			},
+			"executable": "bin/surf3d"
 		}
+
 	}
 }
