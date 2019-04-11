@@ -682,10 +682,10 @@ void ImageGroup::updateLinearTransforms() {
 	for ( int image1 = 0; image1 < this->images.size(); image1++ ) {
 
 		double sDisp[ 3 ] = { 0, 0, 0 };
-		double sPos[ 3 ] = { 0, 0, 0 };
-		double sPos2[ 3 ] = { 0, 0, 0 };
-		double sPosDisp[ 3 ] = { 0, 0, 0 };
-		double sPosDisp2[ 3 ] = { 0, 0, 0 };
+		double sPosA[ 3 ] = { 0, 0, 0 };
+		double sPosA2[ 3 ] = { 0, 0, 0 };
+		double sPosB[ 3 ] = { 0, 0, 0 };
+		double sPosB2[ 3 ] = { 0, 0, 0 };
 		double sWeight = 0;
 		Image &image = this->images[ image1 ];
 		Point *point = &image.points[ 0 ];
@@ -702,12 +702,14 @@ void ImageGroup::updateLinearTransforms() {
 
 				for ( int k = 0; k < 3; k++ ) {
 
-					sPos[ k ] += weight * pos[ k ];
-					float disp = sign * weight * link->difference[ k ];
-					sDisp[ k ] += disp;
-					sPosDisp[ k ] += weight * pos[ k ] + disp;
-					sPos2[ k ] += weight * pos[ k ] * pos[ k ];
-					sPosDisp2[ k ] += weight * ( pos[ k ] + disp )* ( pos[ k ] + disp );
+					float posA = pos[ k ];
+					float disp = sign * link->difference[ k ];
+					float posB = posA + disp;
+					sDisp[ k ] += weight * disp;
+					sPosA[ k ] += weight * posA;
+					sPosB[ k ] += weight * posB;
+					sPosA2[ k ] += weight * posA * posA;
+					sPosB2[ k ] += weight * posB * posB;
 
 				}
 
@@ -725,8 +727,8 @@ void ImageGroup::updateLinearTransforms() {
 			float sWeight2 = sWeight * sWeight;
 			float scale = matrix->GetElement( k, k );
 			float newScale = this->useScale ? pow(
-				( sPosDisp2[ k ] - 2 * sPosDisp[ k ] * sPosDisp[ k ] / sWeight2 ) /
-				( sPos2[ k ] - 2 * sPos[ k ] * sPos[ k ] / sWeight2 ),
+				( sWeight * sPosB2[ k ] - sPosB[ k ] * sPosB[ k ] ) /
+				( sWeight * sPosA2[ k ] - sPosA[ k ] * sPosA[ k ] ),
 				0.5 * this->linearAlpha ) : 1.0;
 
 			if ( isnan( newScale ) ) continue;
@@ -735,9 +737,9 @@ void ImageGroup::updateLinearTransforms() {
 			if ( isnan( translation ) ) continue;
 			matrix->SetElement( k, 3, translation
 				+ this->linearAlpha * sDisp[ k ] / sWeight
-				+ sPos[ k ] * ( 1 - newScale ) / sWeight );
+				+ sPosA[ k ] * ( 1 - newScale ) / sWeight );
 
-			image.center[ k ] = sPos[ k ] / sWeight;
+			image.center[ k ] = sPosA[ k ] / sWeight;
 
 		}
 
