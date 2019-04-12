@@ -223,6 +223,7 @@ bool ImageGroup::updateDeformableTransforms() {
 		for ( unsigned short point1 = 0; point1 < image.points.size(); point1++ ) {
 
 			const float *pos = point->xyz;
+			const float *pA = point->xyz2;
 			float sWeight = 0;
 			float sDisp[ 3 ] = { 0, 0, 0 };
 			// compute point displacement
@@ -230,16 +231,18 @@ bool ImageGroup::updateDeformableTransforms() {
 			for ( auto iter = point->linkIds.begin(); iter != point->linkIds.end(); iter++ ) {
 
 				Link *link = &this->links[ *iter ];
-				float sign = link->image1 == image1 ? -1 : 1;
+
+				Point *pointB = ( link->image1 == image1 ) ?
+					&this->images[ link->image2 ].points[ link->point2 ]
+					: &this->images[ link->image1 ].points[ link->point1 ];
+
+				float *pB = pointB->xyz2;
 				float weight = link->weight;
 				if ( weight < this->inlierThreshold ) continue;
 				weight *= weight;
 
-				for ( int k = 0; k < 3; k++ ) {
-
-					sDisp[ k ] += sign * weight * link->difference[ k ];
-
-				}
+				for ( int k = 0; k < 3; k++ )
+					sDisp[ k ] += weight * ( pB[ k ] - pA[ k ] );
 
 				sWeight += weight;
 
@@ -629,15 +632,14 @@ void ImageGroup::updateDistances() {
 	for ( int i = 0; i < this->links.size(); i++ ) {
 
 		Link *link = &this->links[ i ];
-		float *diff = link->difference;
 		float *pt1 = this->images[ link->image1 ].points[ link->point1 ].xyz2;
 		float *pt2 = this->images[ link->image2 ].points[ link->point2 ].xyz2;
 		float d2 = 0;
 
 		for ( int i = 0; i < 3; i++ ) {
 
-			diff[ i ] = pt1[ i ] - pt2[ i ];
-			d2 += diff[ i ] * diff[ i ];
+			float diff = pt1[ i ] - pt2[ i ];
+			d2 += diff * diff;
 
 		}
 

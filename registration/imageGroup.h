@@ -22,9 +22,7 @@ struct Link {
 	unsigned short image2;
 	unsigned short point2;
 
-	float difference[ 3 ]; // point1 - point2
 	float distance; // | point1 - point2 |
-
 	float weight; // inlier probability
 
 };
