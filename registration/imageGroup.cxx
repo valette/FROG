@@ -688,24 +688,28 @@ void ImageGroup::updateLinearTransforms() {
 		double sPosB2[ 3 ] = { 0, 0, 0 };
 		double sWeight = 0;
 		Image &image = this->images[ image1 ];
-		Point *point = &image.points[ 0 ];
+		Point *pointA = &image.points[ 0 ];
 
 		for ( unsigned short point1 = 0; point1 < image.points.size(); point1++ ) {
 
-			float *pos = point->xyz;
+			float *pA = pointA->xyz2;
 
-			for ( auto iter = point->linkIds.begin(); iter != point->linkIds.end(); iter++ ) {
+			for ( auto iter = pointA->linkIds.begin(); iter != pointA->linkIds.end(); iter++ ) {
 
 				Link *link = &this->links[ *iter ];
-				float sign = link->image1 == image1 ? -1 : 1;
+
+				Point *pointB = ( link->image1 == image1 ) ?
+					&this->images[ link->image2 ].points[ link->point2 ]
+					: &this->images[ link->image1 ].points[ link->point1 ];
+
+				float *pB = pointB->xyz2;
 				float weight = link->weight;
 
 				for ( int k = 0; k < 3; k++ ) {
 
-					float posA = pos[ k ];
-					float disp = sign * link->difference[ k ];
-					float posB = posA + disp;
-					sDisp[ k ] += weight * disp;
+					float posA = pA[ k ];
+					float posB = pB[ k ];
+					sDisp[ k ] += weight * ( posB - posA );
 					sPosA[ k ] += weight * posA;
 					sPosB[ k ] += weight * posB;
 					sPosA2[ k ] += weight * posA * posA;
@@ -717,7 +721,7 @@ void ImageGroup::updateLinearTransforms() {
 
 			}
 
-			point++;
+			pointA++;
 
 		}
 
