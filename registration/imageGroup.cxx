@@ -30,11 +30,9 @@ void ImageGroup::run() {
 		cout << "Linear registration, iteration " << iteration + 1
 			<< "/" << this->linearIterations << endl;
 
-		this->updateDistances();
 		if ( !( iteration % this->statIntervalUpdate ) ) this->updateStats();
-		measure.E = this->updateWeights();
 		if ( this->printStats ) displayStats();
-		this->updateLinearTransforms();
+		measure.E = this->updateLinearTransforms();
 		if ( this->printLinear ) this->displayLinearTransforms();
 		this->transformPoints();
 		cout << "E = " << measure.E;
@@ -62,14 +60,13 @@ void ImageGroup::run() {
 				<< ", Iteration " << iteration + 1 <<"/"
 				<< this->deformableIterations << endl;
 
-			this->updateDistances();
 			if ( !( iteration % this->statIntervalUpdate ) ) this->updateStats();
-			measure.E = this->updateWeights();
 			if ( this->printStats ) this->displayStats();
+			measure.E = this->updateDeformableTransforms();
 			cout << "E = " << measure.E;
-			if ( !this->updateDeformableTransforms() ) {
+			if ( measure.E < 0 ) {
 
-				cout << "creating new grid" << endl;
+				cout << " creating new grid" << endl;
 				numberOfGrids++;
 				iteration--;
 				this->transformPoints( true );
@@ -200,9 +197,11 @@ inline void vtkBSplineTransformWeights( double F[ 4 ], double f ) {
 
 }
 
-bool ImageGroup::updateDeformableTransforms() {
+double ImageGroup::updateDeformableTransforms() {
 
-	#pragma omp parallel for
+	double sDistances = 0, sWeights = 0;
+
+	#pragma omp parallel for reduction( +:sDistances, sWeights )
 	for ( int image1 = 0; image1 < this->images.size(); image1++ ) {
 
 		Image &image = this->images[ image1 ];
@@ -211,6 +210,7 @@ bool ImageGroup::updateDeformableTransforms() {
 		vtkIdType increments[ 3 ];
 		double spacing[ 3 ];
 		double origin[ 3 ];
+		float diff[ 3 ];
 		image.gradient->GetSpacing( spacing );
 		image.gradient->GetOrigin( origin );
 		image.gradient->GetDimensions( dims );
@@ -219,6 +219,7 @@ bool ImageGroup::updateDeformableTransforms() {
 		int nValues = 4 * dims[ 0 ] * dims[ 1 ] * dims[ 2 ];
 		for ( int i = 0; i < nValues; i++ ) gradient[ i ] = 0;
 		Point *point = &image.points[ 0 ];
+		Stats *statsA = &image.stats;
 
 		for ( unsigned short point1 = 0; point1 < image.points.size(); point1++ ) {
 
@@ -228,16 +229,28 @@ bool ImageGroup::updateDeformableTransforms() {
 			float sDisp[ 3 ] = { 0, 0, 0 };
 			// compute point displacement
 
-			for ( auto iter = point->linkIds.begin(); iter != point->linkIds.end(); iter++ ) {
+			for ( auto link = point->links.begin(); link != point->links.end(); link++ ) {
 
-				Link *link = &this->links[ *iter ];
-
-				Point *pointB = ( link->image1 == image1 ) ?
-					&this->images[ link->image2 ].points[ link->point2 ]
-					: &this->images[ link->image1 ].points[ link->point1 ];
-
+				Image *image2 = &this->images[ link->image ];
+				Point *pointB = &image2->points[ link->point ];
 				float *pB = pointB->xyz2;
-				float weight = link->weight;
+				float dist = 0;
+
+				for ( int k = 0; k < 3; k++ ) {
+
+					diff[ k ] = pB[ k ] - pA[ k ];
+					dist += diff[ k ] * diff[ k ];
+
+				}
+
+				dist = sqrt( dist );
+				float probA = statsA->getInlierProbability( dist );
+				float probB = image2->stats.getInlierProbability( dist );
+				float weight = min( probA, probB );
+
+				sDistances += weight * dist;
+				sWeights += weight;
+
 				if ( weight < this->inlierThreshold ) continue;
 				weight *= weight;
 
@@ -385,7 +398,7 @@ bool ImageGroup::updateDeformableTransforms() {
 	if ( this->guaranteeDiffeomorphism && ( nBigCoeffs > 0 ) ) {
 
 		cout << endl<< "Diffeomorphism is not guaranteed : Iteration canceled" << endl;
-		return false;
+		return -1;
 
 	}
 
@@ -417,7 +430,7 @@ bool ImageGroup::updateDeformableTransforms() {
 
 	}
 
-	return true;
+	return sDistances / sWeights;
 
 }
 
@@ -432,14 +445,26 @@ void ImageGroup::updateStats() {
 		Point *point = &image->points[ 0 ];
 		Stats *stats = &image->stats;
 		stats->reset();
+		float diff[ 3 ];
 
 		for ( unsigned short point1 = 0; point1 < image->points.size(); point1++ ) {
 
+			const float *pA = point->xyz2;
+			for ( auto link = point->links.begin(); link != point->links.end(); link++ ) {
 
-			for ( auto iter = point->linkIds.begin(); iter != point->linkIds.end(); iter++ ) {
+				Image *image2 = &this->images[ link->image ];
+				Point *pointB = &image2->points[ link->point ];
+				float *pB = pointB->xyz2;
+				float dist2 = 0;
 
-				Link &link = this->links[ *iter ];
-				stats->addSample( link.distance );
+				for ( int k = 0; k < 3; k++ ) {
+
+					diff[ k ] = pB[ k ] - pA[ k ];
+					dist2 += diff[ k ] * diff[ k ];
+
+				}
+
+				stats->addSample( sqrt( dist2 ) );
 
 			}
 
@@ -626,63 +651,14 @@ void ImageGroup::transformPoints( bool apply ) {
 }
 
 
-void ImageGroup::updateDistances() {
+double ImageGroup::updateLinearTransforms() {
 
-	#pragma omp parallel for
-	for ( int i = 0; i < this->links.size(); i++ ) {
+	double sDistances = 0, sWeights = 0;
 
-		Link *link = &this->links[ i ];
-		float *pt1 = this->images[ link->image1 ].points[ link->point1 ].xyz2;
-		float *pt2 = this->images[ link->image2 ].points[ link->point2 ].xyz2;
-		float d2 = 0;
-
-		for ( int i = 0; i < 3; i++ ) {
-
-			float diff = pt1[ i ] - pt2[ i ];
-			d2 += diff * diff;
-
-		}
-
-		link->distance = sqrt( d2 );
-
-	}
-
-}
-
-float ImageGroup::updateWeights() {
-
-	double sDistances = 0;
-	double sWeights = 0;
-
-	// compute weights
 	#pragma omp parallel for reduction( +:sDistances, sWeights )
-	for ( int l = 0; l < this->links.size(); l++ ) {
-
-		Link *link = &this->links[ l ];
-
-		float weight1 = this->images[ link->image1 ]
-			.stats.getInlierProbability( link->distance );
-
-		float weight2 = this->images[ link->image2 ]
-			.stats.getInlierProbability( link->distance );
-
-		link->weight = min( weight1, weight2 );
-
-		sDistances += link->weight * link->distance;
-		sWeights += link-> weight;
-
-	}
-
-	return sDistances / sWeights;
-
-}
-
-
-void ImageGroup::updateLinearTransforms() {
-
-	#pragma omp parallel for
 	for ( int image1 = 0; image1 < this->images.size(); image1++ ) {
 
+		float diff[3];
 		double sDisp[ 3 ] = { 0, 0, 0 };
 		double sPosA[ 3 ] = { 0, 0, 0 };
 		double sPosA2[ 3 ] = { 0, 0, 0 };
@@ -691,27 +667,39 @@ void ImageGroup::updateLinearTransforms() {
 		double sWeight = 0;
 		Image &image = this->images[ image1 ];
 		Point *pointA = &image.points[ 0 ];
+		Stats *statsA = &image.stats;
 
 		for ( unsigned short point1 = 0; point1 < image.points.size(); point1++ ) {
 
 			float *pA = pointA->xyz2;
 
-			for ( auto iter = pointA->linkIds.begin(); iter != pointA->linkIds.end(); iter++ ) {
+			for ( auto link = pointA->links.begin(); link != pointA->links.end(); link++ ) {
 
-				Link *link = &this->links[ *iter ];
-
-				Point *pointB = ( link->image1 == image1 ) ?
-					&this->images[ link->image2 ].points[ link->point2 ]
-					: &this->images[ link->image1 ].points[ link->point1 ];
-
+				Image *image2 = &this->images[ link->image ];
+				Point *pointB = &image2->points[ link->point ];
 				float *pB = pointB->xyz2;
-				float weight = link->weight;
+				float dist = 0;
+
+				for ( int k = 0; k < 3; k++ ) {
+
+					diff[ k ] = pB[ k ] - pA[ k ];
+					dist += diff[ k ] * diff[ k ];
+
+				}
+
+				dist = sqrt( dist );
+				float probA = statsA->getInlierProbability( dist );
+				float probB = image2->stats.getInlierProbability( dist );
+				float weight = min( probA, probB );
+
+				sDistances += weight * dist;
+				sWeights += weight;
 
 				for ( int k = 0; k < 3; k++ ) {
 
 					float posA = pA[ k ];
 					float posB = pB[ k ];
-					sDisp[ k ] += weight * ( posB - posA );
+					sDisp[ k ] += weight * diff[ k ];
 					sPosA[ k ] += weight * posA;
 					sPosB[ k ] += weight * posB;
 					sPosA2[ k ] += weight * posA * posA;
@@ -764,6 +752,8 @@ void ImageGroup::updateLinearTransforms() {
 			this->averageLinearTransforms1();
 
 	}
+
+	return sDistances / sWeights;
 
 }
 
@@ -846,10 +836,25 @@ void ImageGroup::averageLinearTransforms2() {
 
 void ImageGroup::setupStats() {
 
-	for ( auto iter = this->links.begin(); iter != this->links.end(); iter++ ) {
+	// add samples to statistics
+	for ( int image1 = 0; image1 < this->images.size(); image1++) {
 
-		this->images[ iter->image1 ].stats.addSlot();
-		this->images[ iter->image2 ].stats.addSlot();
+		Image *image = &this->images[ image1 ];
+		Point *point = &image->points[ 0 ];
+		Stats *stats = &image->stats;
+
+		for ( unsigned short point1 = 0; point1 < image->points.size(); point1++ ) {
+
+
+			for ( auto link = point->links.begin(); link != point->links.end(); link++ ) {
+
+				stats->addSlot();
+
+			}
+
+			point++;
+
+		}
 
 	}
 
@@ -1022,37 +1027,35 @@ void ImageGroup::readPairs( char *inputFile ) {
 	while ( fread( &image1, sizeof( unsigned short ), 1, file ) ) {
 
 		fread( &image2, sizeof( unsigned short ), 1, file );
-
 		unsigned int size;
 		fread(&size, sizeof(unsigned int), 1, file);
+
+		if ( !size ) {
+
+			cout << "Error : number of pairs is 0" << endl;
+			exit( 1 );
+
+		}
 
 		for ( int i = 0; i < size; i++ ) {
 
 			unsigned short point1, point2;
 			fread(&point1, sizeof(unsigned short), 1, file);
 			fread(&point2, sizeof(unsigned short), 1, file);
-			Link link;
-			link.image1 = image1;
-			link.point1 = point1;
-			link.image2 = image2;
-			link.point2 = point2;
-			int id = this->links.size();
-			this->links.push_back( link );
-			this->images[ image1 ].points[ point1 ].linkIds.push_back( id );
-			this->images[ image2 ].points[ point2 ].linkIds.push_back( id );
+			Link link1;
+			Link link2;
+			link1.image = image1;
+			link1.point = point1;
+			link2.image = image2;
+			link2.point = point2;
+			this->images[ image1 ].points[ point1 ].links.push_back( link2 );
+			this->images[ image2 ].points[ point2 ].links.push_back( link1 );
 
 		}
 
 	}
 
 	fclose(file);
-
-	if ( !this->links.size() ) {
-
-		cout << "Error : number of pairs is 0" << endl;
-		exit( 1 );
-
-	}
 
 }
 

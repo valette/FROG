@@ -14,20 +14,6 @@ struct Landmark {
 
 typedef std::vector < Landmark > Landmarks;
 
-struct Link {
-
-	unsigned short image1;
-	unsigned short point1;
-
-	unsigned short image2;
-	unsigned short point2;
-
-	float distance; // | point1 - point2 |
-	float weight; // inlier probability
-
-};
-
-
 class Measure {
 
 public:
@@ -43,8 +29,6 @@ class ImageGroup {
 public:
 	
 	std::vector < Image > images;
-	std::vector< Link > links; 
-
 	std::vector < Measure > measures;
 
 	void run();
@@ -55,14 +39,11 @@ public:
 	void setupLinearTransforms();
 
 	void transformPoints( bool apply = false );
-	void updateDistances(); // compute all pair distances
 
 	void updateStats(); // compute Maxwell distribution parameters
 
-	float updateWeights(); // compute inlier probabilities, returns average distance
-
-	bool updateDeformableTransforms(); // return true if diffeomorphism is guaranteed
-	void updateLinearTransforms();
+	double updateDeformableTransforms(); // return true if diffeomorphism is guaranteed
+	double updateLinearTransforms();
 	void averageLinearTransforms1(); // set volume 0 as reference
 	void averageLinearTransforms2(); // compute average scale
 
