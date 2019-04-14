@@ -371,7 +371,7 @@ bool ImageGroup::updateDeformableTransforms() {
 
 				coeffs[ image ][ offset + j ] -= sum;
 
-				if ( coeffs[ image ][ offset + j ] > maxD * spacing[ j ] )
+				if ( fabs( coeffs[ image ][ offset + j ] ) > maxD * spacing[ j ] )
 					nBigCoeffs++;
 
 				nCoeffs++;
