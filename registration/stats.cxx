@@ -80,7 +80,7 @@ void Stats::displayParameters() {
 	cout << "nSamples=" << s;
 
 	double sum = accumulate( samples.begin(), samples.begin() + s , 0.0 );
-	double mean = sum / samples.size();
+	double mean = sum / s;
 
 	double sq_sum = std::inner_product( samples.begin(), samples.begin() + s,
 		samples.begin(), 0.0 );
@@ -113,7 +113,7 @@ void Stats::saveSamples( const char *file, int subsampling ) {
 	std::fstream fs;
 	fs.open ( file, std::fstream::out | std::fstream::trunc );
 
-	for ( int i = 0; i < this->samples.size(); i++ ) 
+	for ( int i = 0; i < this->size; i++ )
 		if ( !( i % subsampling ) ) fs << this->samples[ i ] << endl;
 
 	fs.close();
@@ -123,9 +123,10 @@ void Stats::saveSamples( const char *file, int subsampling ) {
 void Stats::getHistogram( float binSize ) {
 
 	float max = 0;
-	for ( auto iter = this->samples.begin(); iter != this->samples.end(); iter++ ) {
 
-		if ( max < *iter ) max = *iter;
+	for ( int i = 0; i < this->size; i++ ) {
+
+		if ( max < this->samples[ i ] ) max = this->samples[ i ];
 
 	}
 
