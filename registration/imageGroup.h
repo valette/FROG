@@ -101,7 +101,7 @@ public:
 	void readLandmarks( const char *path );
 	bool computeLandmarkDistances( Measure &measure );
 
-	ImageGroup() : linearIterations( 200 ), deformableIterations( 200 ),
+	ImageGroup() : linearIterations( 50 ), deformableIterations( 200 ),
 		linearAlpha( 0.5 ), linearAverageMethod( 1 ), deformableAlpha( 0.02 ),
 		deformableLevels( 3 ), guaranteeDiffeomorphism( true ),
 		maxDisplacementRatio( 0.4 ), useScale( true ), statIntervalUpdate( 10 ),
