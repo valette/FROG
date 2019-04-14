@@ -134,9 +134,9 @@ void Stats::getHistogram( float binSize ) {
 
 	for ( int i = 0; i < size; i++ ) this->histogram[ i ] = 0;
 
-	for ( auto iter = this->samples.begin(); iter != this->samples.end(); iter++ ) {
+	for ( int i = 0; i < this->size; i++ ) {
 
-		int position = round( *iter / binSize );
+		int position = round( this->samples[ i ] / binSize );
 		this->histogram[ position ]++;
 
 	}
