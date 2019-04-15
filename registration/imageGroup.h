@@ -44,8 +44,6 @@ public:
 
 	double updateDeformableTransforms(); // return true if diffeomorphism is guaranteed
 	double updateLinearTransforms();
-	void averageLinearTransforms1(); // set volume 0 as reference
-	void averageLinearTransforms2(); // compute average scale
 
 	void displayStats();
 	void displayLinearTransforms();
@@ -83,7 +81,7 @@ public:
 	bool computeLandmarkDistances( Measure &measure );
 
 	ImageGroup() : linearIterations( 50 ), deformableIterations( 200 ),
-		linearAlpha( 0.5 ), linearAverageMethod( 1 ), deformableAlpha( 0.02 ),
+		linearAlpha( 0.5 ), deformableAlpha( 0.02 ),
 		deformableLevels( 3 ), guaranteeDiffeomorphism( true ),
 		maxDisplacementRatio( 0.4 ), useScale( true ), statIntervalUpdate( 10 ),
 		initialGridSize( 100 ), boundingBoxMargin( 0.1 ), inlierThreshold( 0.5 ),

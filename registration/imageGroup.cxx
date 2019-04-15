@@ -512,6 +512,8 @@ void ImageGroup::displayLinearTransforms() {
 void ImageGroup::setupLinearTransforms() {
 
 	float box[ 6 ];
+	float centers[ this->images.size() ][ 3 ];
+	float average[ 3 ] = { 0, 0, 0 };
 
 	for ( int i = 0; i < this->images.size(); i++ ) {
 
@@ -524,17 +526,13 @@ void ImageGroup::setupLinearTransforms() {
 
 		this->images[ i ].expandBoundingBox( box );
 
-		for ( int j = 0; j < 3; j++ )
-			this->images[ i ].center[ j ] = 0.5 * ( box[ 1 + 2 * j ] + box[ 2 * j ] );
+		for ( int j = 0; j < 3; j++ ) {
 
-	}
+			float center = 0.5 * ( box[ 1 + 2 * j ] + box[ 2 * j ] );
+			centers[ i ][ j ] = center;
+			average[ j ] += center / ( float ) this->images.size();
 
-	float average[ 3 ] = { 0, 0, 0 };
-
-	for (int i = 0; i < this->images.size(); i++ ) {
-
-		for ( int j = 0; j < 3; j++ ) average[ j ] +=
-			this->images[ i ].center[ j ] / ( float ) this->images.size();
+		}
 
 	}
 
@@ -551,7 +549,7 @@ void ImageGroup::setupLinearTransforms() {
 		matrix->Identity();
 
 		for ( int j = 0; j < 3; j++ )
-			matrix->SetElement( j, 3, average[ j ] - image->center[ j ] );
+			matrix->SetElement( j, 3, average[ j ] - centers[ i ][ j ] );
 
 		( ( vtkMatrixToLinearTransform *) image->transform )->SetInput( matrix );
 
@@ -733,104 +731,13 @@ double ImageGroup::updateLinearTransforms() {
 				+ this->linearAlpha * sDisp[ k ] / sWeight
 				+ sPosA[ k ] * ( 1 - newScale ) / sWeight );
 
-			image.center[ k ] = sPosA[ k ] / sWeight;
-
 		}
 
 		image.transform->Update();
 
 	}
 
-	switch( this->linearAverageMethod ) {
-
-		case 1 :
-			this->averageLinearTransforms2();
-			break;
-
-		case 0:
-		default :
-			this->averageLinearTransforms1();
-
-	}
-
 	return sDistances / sWeights;
-
-}
-
-void ImageGroup::averageLinearTransforms1() {
-
-	// set first volume as reference with no translation nor scaling;
-	float origin[ 3 ];
-	float scale[ 3 ];
-
-	for ( int image1 = 0; image1 < this->images.size() ; image1++) {
-
-		Image &image = this->images[ image1 ];
-		auto matrix = ( ( vtkMatrixToLinearTransform *) image.transform )->GetInput();
-
-		if ( image1 == 0 ) {
-
-			for ( int k = 0; k < 3; k++ ) origin[ k ] = matrix->GetElement( k, 3 );
-			for ( int k = 0; k < 3; k++ ) scale[ k ] = 1.0 / matrix->GetElement( k, k );
-
-		}
-
-		for ( int k = 0; k < 3; k++ ) {
-
-			float s = matrix->GetElement( k, k );
-			matrix->SetElement( k, k, s * scale[ k ] );
-
-			float d = matrix->GetElement( k, 3 );
-			matrix->SetElement( k, 3, d - origin[ k ]
-				+ image.center[ k ] * ( 1 - scale[ k ] ) );
-
-		}
-
-	}
-
-}
-
-
-void ImageGroup::averageLinearTransforms2() {
-
-	float origin[ 3 ];
-	float scale[ 3 ] = { 1, 1, 1 };
-
-	for ( int image1 = 0; image1 < this->images.size() ; image1++) {
-
-		Image &image = this->images[ image1 ];
-		auto matrix = ( ( vtkMatrixToLinearTransform *) image.transform )->GetInput();
-
-		for ( int k = 0; k < 3; k++ ) scale[ k ] *= matrix->GetElement( k, k );
-
-	}
-
-	for ( int k = 0; k < 3; k++ )
-		scale[ k ] = pow( scale[ k ], - 1.0 /  this->images.size() );
-
-	for ( int image1 = 0; image1 < this->images.size() ; image1++) {
-
-		Image &image = this->images[ image1 ];
-		auto matrix = ( ( vtkMatrixToLinearTransform *) image.transform )->GetInput();
-
-		if ( image1 == 0 ) {
-
-			for ( int k = 0; k < 3; k++ ) origin[ k ] = matrix->GetElement( k, 3 );
-
-		}
-
-		for ( int k = 0; k < 3; k++ ) {
-
-			float s = matrix->GetElement( k, k );
-			matrix->SetElement( k, k, s * scale[ k ] );
-
-			float d = matrix->GetElement( k, 3 );
-			matrix->SetElement( k, 3, d - origin[ k ]
-				+ image.center[ k ] * ( 1 - scale[ k ] ) );
-
-		}
-
-	}
 
 }
 

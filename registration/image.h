@@ -21,8 +21,6 @@ public:
 
 	vtkGeneralTransform *allTransforms;
 
-	float center[ 3 ];
-
 	Image () : gradient( 0 ) {};
 
 };
