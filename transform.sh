@@ -65,7 +65,11 @@ for (( CUR_IT=0; CUR_IT<${IMG_NUMBER}; CUR_IT++ ))
 do
 	IMG=${IMG_INPUT[CUR_IT]};
 	TRANS=transformed$CUR_IT.nii.gz
-	launch "$VOLUMETRANSFORM $IMG dummy.mhd -t tfm/$CUR_IT.tfm -o $TRANS"
+	if [ ! -e "$TRANS" ]; then
+		launch "$VOLUMETRANSFORM $IMG dummy.mhd -t tfm/$CUR_IT.tfm -o $TRANS"
+	else
+		echo "Transformed file $TRANS already exists, skip transformation"
+	fi
 	files+=" $TRANS"
 done
 
