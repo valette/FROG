@@ -248,8 +248,8 @@ double ImageGroup::updateDeformableTransforms() {
 				float probB = image2->stats.getInlierProbability( dist );
 				float weight = min( probA, probB );
 
-				sDistances += weight * dist;
-				sWeights += weight;
+				sDistances += weight *weight * dist * dist;
+				sWeights += weight * weight;
 
 				if ( weight < this->inlierThreshold ) continue;
 				weight *= weight;
@@ -430,7 +430,7 @@ double ImageGroup::updateDeformableTransforms() {
 
 	}
 
-	return sDistances / sWeights;
+	return sqrt( sDistances / sWeights );
 
 }
 
@@ -690,8 +690,8 @@ double ImageGroup::updateLinearTransforms() {
 				float probB = image2->stats.getInlierProbability( dist );
 				float weight = min( probA, probB );
 
-				sDistances += weight * dist;
-				sWeights += weight;
+				sDistances += weight * weight * dist * dist;
+				sWeights += weight * weight;
 
 				for ( int k = 0; k < 3; k++ ) {
 
@@ -737,7 +737,7 @@ double ImageGroup::updateLinearTransforms() {
 
 	}
 
-	return sDistances / sWeights;
+	return sqrt( sDistances / sWeights );
 
 }
 
@@ -1043,11 +1043,12 @@ void ImageGroup::saveMeasures( const char *file ) {
 
 	std::fstream fs;
 	fs.open( file, fstream::out | fstream::trunc );
-	fs << "E, landmarkAv, landmarkMax, landmarkSTD" << endl;
+	fs << "Iteration, E, landmarkAv, landmarkMax, landmarkSTD" << endl;
 
 	for ( auto i = this->measures.begin(); i != this->measures.end(); i++ ) {
 
-		fs << i->E << "," << i->landmarkAv << "," << i->landmarkMax
+		fs << i - this->measures.begin() << "," << i->E
+			<< "," << i->landmarkAv << "," << i->landmarkMax
 			<< ',' << i->landmarkSTD << endl;
 
 	}
