@@ -51,4 +51,8 @@ After registration is computed, input images can be transformed into the common 
 
 will transform input images and compute their average with a spacing equal to 2
 
+To check that the output transforms are diffeomorphic:
+
+	./checkDiffeomorphism.sh ./params.sh
+
 comments, suggestions : https://github.com/valette/FROG/issues
