@@ -30,6 +30,8 @@ This code is distributed under the CeCILL-B license (BSD-compatible)
 	cmake . -DCMAKE_BUILD_TYPE=Release
 	make
 
+Note for FEDORA linux : in case of crashes, please use a self-compiled version of VTK.
+
 ### Usage ###
 
 Groupwise registration is computed via the run.sh script, in three steps:
