@@ -12,6 +12,8 @@
 #include <vtkImageData.h>
 #include <vtkMatrixToLinearTransform.h>
 
+#include "../vtkOpenSURF3D/picojson.h"
+
 #include "imageGroup.h"
 
 using namespace std;
@@ -1033,6 +1035,92 @@ void ImageGroup::saveTransforms() {
 
 		}
 
+		fs.close();
+
+	}
+
+	// output to .json
+	#pragma omp parallel for
+	for ( int image1 = 0; image1 < this->images.size(); image1++) {
+
+		Image *image = &this->images[ image1 ];
+		picojson::array transforms;
+
+		for ( int i = 0; i < image->allTransforms->GetNumberOfConcatenatedTransforms(); i++ ) {
+
+			auto transform = image->allTransforms->GetConcatenatedTransform( i );
+			auto name = transform->GetClassName();
+			picojson::object trans;
+			trans[ "type" ] = picojson::value( name );
+
+			if ( strcmp( name, "vtkMatrixToLinearTransform" ) == 0 ) {
+
+				picojson::array matrix;
+				auto *m =  ( ( vtkMatrixToLinearTransform *) transform )->GetInput();
+
+				for ( int i = 0; i < 4; i++ ) {
+
+					for ( int j = 0; j < 4; j++ ) {
+
+						matrix.push_back( picojson::value( m->GetElement( i, j ) ) );
+
+					}
+
+				}
+
+				trans[ "matrix" ] = picojson::value( matrix );
+
+			} else if ( strcmp( name, "vtkBSplineTransform" ) == 0 ) {
+
+				vtkImageData *imageData = ( ( vtkBSplineTransform * ) transform )->GetCoefficientData();
+				int dims[ 3 ];
+				double origin[ 3 ];
+				double spacing[ 3 ];
+				imageData->GetDimensions( dims );
+				imageData->GetSpacing( spacing );
+				imageData->GetOrigin( origin );
+				picojson::array dimensions;
+
+				for ( int k = 0; k < 3; k ++ )
+					dimensions.push_back( picojson::value( ( double ) dims[ k ] - 3 ) );
+
+				trans[ "dimensions" ] = picojson::value( dimensions );
+				picojson::array bounds;
+
+				for ( int k = 0; k < 3; k++ ) {
+
+					bounds.push_back( picojson::value( origin[ k ] + spacing[ k ] ) );
+					bounds.push_back( picojson::value( origin[ k ] + spacing[ k ] * ( dims[ k ] - 2 ) ) );
+
+				}
+
+				trans[ "bounds" ] = picojson::value( bounds );
+				int count = 0;
+				float *values = ( float * ) imageData->GetScalarPointer();
+				int nValues = 3 * dims[ 0 ] * dims[ 1 ] * dims[ 2 ];
+				picojson::array coeffs;
+
+				for ( int j = 0; j < nValues; j++ ) {
+
+					coeffs.push_back ( picojson::value( values[ j ] ) );
+
+				}
+
+				trans[ "coeffs" ] = picojson::value( coeffs );
+
+			}
+
+			transforms.push_back( picojson::value( trans ) );
+
+		}
+
+		ostringstream file;
+		file << "tfm/" << image1 << ".json";
+		std::fstream fs;
+		fs.open( file.str().c_str(), fstream::out | fstream::trunc );
+		picojson::object root;
+		root[ "transforms" ] = picojson::value( transforms );
+		fs << picojson::value( root ).serialize();
 		fs.close();
 
 	}
