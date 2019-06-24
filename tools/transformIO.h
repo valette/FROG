@@ -104,27 +104,26 @@ void writeFrogJSON( vtkGeneralTransform *generalTransform, const char *fileName 
 
 			vtkImageData *imageData = ( ( vtkBSplineTransform * ) transform )->GetCoefficientData();
 			int dims[ 3 ];
-			double origin[ 3 ];
-			double spacing[ 3 ];
+			double ori[ 3 ];
+			double sp[ 3 ];
 			imageData->GetDimensions( dims );
-			imageData->GetSpacing( spacing );
-			imageData->GetOrigin( origin );
+			imageData->GetSpacing( sp );
+			imageData->GetOrigin( ori );
 			picojson::array dimensions;
+			picojson::array origin;
+			picojson::array spacing;
 
-			for ( int k = 0; k < 3; k ++ )
-				dimensions.push_back( picojson::value( ( double ) dims[ k ] - 3 ) );
+			for ( int k = 0; k < 3; k ++ ) {
 
-			trans[ "dimensions" ] = picojson::value( dimensions );
-			picojson::array bounds;
-
-			for ( int k = 0; k < 3; k++ ) {
-
-				bounds.push_back( picojson::value( origin[ k ] + spacing[ k ] ) );
-				bounds.push_back( picojson::value( origin[ k ] + spacing[ k ] * ( dims[ k ] - 2 ) ) );
+				dimensions.push_back( picojson::value( ( double ) dims[ k ] ) );
+				origin.push_back( picojson::value( ori[ k ] ) );
+				spacing.push_back( picojson::value( sp[ k ] ) );
 
 			}
 
-			trans[ "bounds" ] = picojson::value( bounds );
+			trans[ "dimensions" ] = picojson::value( dimensions );
+			trans[ "origin" ] = picojson::value( origin );
+			trans[ "spacing" ] = picojson::value( spacing );
 			int count = 0;
 			float *values = ( float * ) imageData->GetScalarPointer();
 			int nValues = 3 * dims[ 0 ] * dims[ 1 ] * dims[ 2 ];
@@ -295,26 +294,24 @@ vtkGeneralTransform *readFrogJSON ( picojson::object root ) {
 
 		} else if ( type.compare ( "vtkBSplineTransform" ) == 0 ) {
 
-			double bboxMin[ 3 ], bboxMax[ 3 ], spacing[ 3 ], origin[ 3 ];
+			double sp[ 3 ], ori[ 3 ];
 			int dims[ 3 ];
 
-			picojson::array bounds = trans[ "bounds" ].get< picojson::array >();
 			picojson::array dimensions = trans[ "dimensions" ].get< picojson::array >();
+			picojson::array origin = trans[ "origin" ].get< picojson::array >();
+			picojson::array spacing = trans[ "spacing" ].get< picojson::array >();
 
 			for (int i = 0 ; i < 3 ; i++) {
 
 				dims[ i ] = dimensions[ i ].get< double >();
-				bboxMin[ i ] = bounds[ 2 * i ].get< double >();
-				bboxMax[ i ] = bounds[ 1 + 2 * i ].get< double >();
-				spacing[ i ] = (double) ( bboxMax[ i ] - bboxMin[ i ] ) / dims[ i ];
-				dims[ i ] += 3;
-				origin[ i ] = bboxMin[ i ] - spacing[ i ];
+				sp[ i ] = spacing[ i ].get< double >();
+				ori[ i ] = origin[ i ].get< double >();
 
 			}
 
 			vtkImageData *coefficients = vtkImageData::New();
-			coefficients->SetOrigin( origin );
-			coefficients->SetSpacing( spacing );
+			coefficients->SetOrigin( ori );
+			coefficients->SetSpacing( sp );
 			coefficients->SetDimensions( dims );
 			coefficients->AllocateScalars( VTK_FLOAT, 3);
 			float *p = ( float *) coefficients->GetScalarPointer();
