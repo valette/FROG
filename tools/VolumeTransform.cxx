@@ -21,7 +21,7 @@ Auteur:   Sebastien Valette
 #include <vtkImageFlip.h>
 
 #include "../vtkOpenSURF3D/vtkRobustImageReader.h"
-#include "readTransform.h"
+#include "transformIO.h"
 
 int main( int argc, char *argv[] ) {
 	if ( argc < 3 ) {

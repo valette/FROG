@@ -16,7 +16,7 @@ Auteur:   Sebastien Valette
 #include <vtkMath.h>
 
 #include "../vtkOpenSURF3D/vtkRobustImageReader.h"
-#include "readTransform.h"
+#include "transformIO.h"
 
 int main( int argc, char *argv[] ) {
 
