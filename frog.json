@@ -1,6 +1,40 @@
 {
 
 	"actions": {
+		"labelContour" : {
+			"parameters" : [
+				{
+					"name" : "inputVolume",
+					"type" : "file",
+					"required" : true
+				}
+			],
+			"executable" : "tools/labelContour.py",
+			"engine" : "python"
+		},
+		"checkerBoard" : {
+			"parameters" : [
+				{
+					"name" : "inputVolume",
+					"type" : "file",
+					"required" : true
+				}
+			],
+			"executable" : "tools/checkerBoard.py",
+			"engine" : "python"
+		},
+		"createGrid" : {
+
+			"parameters" : [
+				{
+					"name" : "inputVolume",
+					"type" : "file",
+					"required" : true
+				}
+			],
+			"executable" : "tools/grid.py",
+			"engine" : "python"
+		},
 		"frog" : {
 			"parameters" : [
 				{
@@ -168,9 +202,19 @@
 					"type" : "file"
 				},
 				{
+					"name" : "interpolation",
+					"prefix" : "-i ",
+					"type" : "int"
+				},
+				{
 					"name" : "invertX",
 					"prefix" : "-rx ",
 					"type" : "int"
+				},
+				{
+					"name" : "backGroundLevel",
+					"prefix" : "-b ",
+					"type" : "float"
 				}
 			],
 			"executable" : "bin/VolumeTransform"
