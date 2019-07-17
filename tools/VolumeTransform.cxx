@@ -37,10 +37,18 @@ int main( int argc, char *argv[] ) {
 	transform->Identity();
 
 	int argumentsIndex = 3;
+	bool backGroundSet = false;
+	float backGroundLevel = 0;
+
 	while ( argumentsIndex < argc ) {
 
 		char * key = argv[ argumentsIndex ];
 		char * value = argv[ argumentsIndex + 1 ];
+
+		if ( strcmp( key ,"-b" ) == 0 ) {
+			backGroundLevel = atof( value );
+			backGroundSet = true;
+		}
 
 		if ( strcmp( key ,"-t" ) == 0 ) {
 			vtkGeneralTransform *trans2 = readTransform( value );
@@ -115,7 +123,7 @@ int main( int argc, char *argv[] ) {
 	reslice->SetOutputExtent( images[ 1 ]->GetExtent() );
 	reslice->SetOutputOrigin( images[ 1 ]->GetOrigin() );
 	reslice->SetResliceTransform( transform );
-	reslice->SetBackgroundLevel( valueRange[ 0 ] );
+	reslice->SetBackgroundLevel( backGroundSet ? backGroundLevel : valueRange[ 0 ] );
 
 	if (interpolation == 0 ) {
 		reslice->SetInterpolationModeToNearestNeighbor();
