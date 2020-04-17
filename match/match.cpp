@@ -26,8 +26,9 @@
 namespace fs = boost::filesystem;
 using namespace std;
 
+typedef unsigned int pointIdType;
 typedef vector<float, boost::alignment::aligned_allocator<float, 32> > Descriptor;
-typedef pair<unsigned short, unsigned short> Match;
+typedef pair<pointIdType, pointIdType> Match;
 typedef vector<Match> MatchVect;
 typedef std::tuple<unsigned short, unsigned short, MatchVect* > pairMatches;
 typedef std::array<double, 3> v3;
@@ -600,9 +601,9 @@ int main( int argc, char *argv[] ) {
 		fwrite(tmp.data(), sizeof(double), 3, file);
 
 		// Write Points
-		unsigned short nbPoints = csvs[it]->size();
+		pointIdType nbPoints = csvs[it]->size();
 
-		fwrite(&nbPoints, sizeof(unsigned short), 1, file);
+		fwrite(&nbPoints, sizeof(pointIdType), 1, file);
 
 		for (auto rowIt = 0 ; rowIt < csvs[it]->size() ; rowIt++) {
 

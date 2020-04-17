@@ -224,7 +224,7 @@ double ImageGroup::updateDeformableTransforms() {
 		Point *point = &image.points[ 0 ];
 		Stats *statsA = &image.stats;
 
-		for ( unsigned short point1 = 0; point1 < image.points.size(); point1++ ) {
+		for ( pointIdType point1 = 0; point1 < image.points.size(); point1++ ) {
 
 			const float *pos = point->xyz;
 			const float *pA = point->xyz2;
@@ -450,7 +450,7 @@ void ImageGroup::updateStats() {
 		stats->reset();
 		float diff[ 3 ];
 
-		for ( unsigned short point1 = 0; point1 < image->points.size(); point1++ ) {
+		for ( pointIdType point1 = 0; point1 < image->points.size(); point1++ ) {
 
 			const float *pA = point->xyz2;
 			for ( auto link = point->links.begin(); link != point->links.end(); link++ ) {
@@ -670,7 +670,7 @@ double ImageGroup::updateLinearTransforms() {
 		Point *pointA = &image.points[ 0 ];
 		Stats *statsA = &image.stats;
 
-		for ( unsigned short point1 = 0; point1 < image.points.size(); point1++ ) {
+		for ( pointIdType point1 = 0; point1 < image.points.size(); point1++ ) {
 
 			float *pA = pointA->xyz2;
 
@@ -753,7 +753,7 @@ void ImageGroup::setupStats() {
 		Point *point = &image->points[ 0 ];
 		Stats *stats = &image->stats;
 
-		for ( unsigned short point1 = 0; point1 < image->points.size(); point1++ ) {
+		for ( pointIdType point1 = 0; point1 < image->points.size(); point1++ ) {
 
 
 			for ( auto link = point->links.begin(); link != point->links.end(); link++ ) {
@@ -917,8 +917,8 @@ void ImageGroup::readPairs( char *inputFile ) {
 		name[ nameLength ] = 0;
 		Image *image = &this->images[ i ];
 		fread( image->refTranslation, sizeof( double ), 3, file );
-		unsigned short nPoints;
-		fread( &nPoints, sizeof( unsigned short ), 1, file );
+		pointIdType nPoints;
+		fread( &nPoints, sizeof( pointIdType ), 1, file );
 		image->points.resize( nPoints );
 
 		for ( int j = 0; j < nPoints; j++) {
@@ -949,9 +949,9 @@ void ImageGroup::readPairs( char *inputFile ) {
 
 		for ( int i = 0; i < size; i++ ) {
 
-			unsigned short point1, point2;
-			fread(&point1, sizeof(unsigned short), 1, file);
-			fread(&point2, sizeof(unsigned short), 1, file);
+			pointIdType point1, point2;
+			fread(&point1, sizeof(pointIdType), 1, file);
+			fread(&point2, sizeof(pointIdType), 1, file);
 			Link link1;
 			Link link2;
 			link1.image = image1;
