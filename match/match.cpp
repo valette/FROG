@@ -226,7 +226,7 @@ inline float norm(Descriptor& pts1, Descriptor& pts2, int size) {
 
 #endif
 
-MatchVect* ComputeMatches(CSV &csv2, CSV &csv1, float threshold, float dist2second, bool matchAll) {
+MatchVect* ComputeMatches(CSV &csv2, CSV &csv1, float threshold, float dist2second, bool matchAll, bool anatFlag, bool sym = false) {
 
 	MatchVect* matches = new MatchVect();
 	float d1, d2;
@@ -250,11 +250,29 @@ MatchVect* ComputeMatches(CSV &csv2, CSV &csv1, float threshold, float dist2seco
 
 			float dist = norm(csv1[i].desc, csv2[j].desc, csv1[i].desc.size() );
 
+			//Anatomical test (euclidian norm after transform)
+			if (anatFlag == true){
+				float x1 = csv1[i].meta[0];
+				float y1 = csv1[i].meta[1];
+				float z1 = csv1[i].meta[2];
+				float x2 = csv2[j].meta[0];
+				float y2 = csv2[j].meta[1];
+				float z2 = csv2[j].meta[2];
+				
+				float euclNorm = sqrt((x1-x2)*(x1-x2) + (y1-y2)*(y1-y2) + (z1-z2)*(z1-z2));
+
+				if (euclNorm > 50){
+					continue;
+				}
+			}
+
 
 			if (matchAll && sqrt(dist) < threshold) {
-
-				matches->push_back(make_pair(match, i));
-
+				if (sym) {
+					matches->push_back(make_pair(i, match));
+				} else {
+					matches->push_back(make_pair(match, i));
+				}
 			} else {
 
 				if(dist<d1) {
@@ -274,12 +292,14 @@ MatchVect* ComputeMatches(CSV &csv2, CSV &csv1, float threshold, float dist2seco
 		}
 
 		if (!matchAll) {
-
 			if ( ( sqrt(d1/d2) < dist2second || (d2 == FLT_MAX) ) &&
 					(sqrt(d1) < threshold)) {
 
-			  matches->push_back(make_pair(match, i));
-
+			  if (sym) {
+					matches->push_back(make_pair(i, match));
+				} else {
+					matches->push_back(make_pair(match, i));
+				}
 			}
 
 		}
@@ -308,7 +328,8 @@ int main( int argc, char *argv[] ) {
 	bool writePoints = false;
 	char* outputFileName = 0;
 	int argumentsIndex = 2;
-
+	bool anatFlag = false;
+	bool symFlag = false;
 	while (argumentsIndex < argc) {
 
 		char* key = argv[argumentsIndex];
@@ -357,7 +378,15 @@ int main( int argc, char *argv[] ) {
 		if (strcmp(key, "-p") == 0) {
 			writePoints = true;
 		}
-
+		
+		if (strcmp(key, "-anat") == 0){
+			anatFlag = true;
+			argumentsIndex -= 1;
+		}
+		if (strcmp(key, "-sym") == 0){
+			symFlag = true;
+			argumentsIndex-=1;
+        }
 		argumentsIndex += 2;
 	}
 
@@ -535,8 +564,11 @@ int main( int argc, char *argv[] ) {
 	{
 		#pragma omp for reduction(+:sum) schedule(dynamic)
 		for (int it = 0 ; it < indices.size() ; it++) {
-			MatchVect* matches = ComputeMatches(*csvs[ indices[it].first ], *csvs[ indices[it].second ], dist, dist2second, matchAll);
-			
+			MatchVect* matches = ComputeMatches(*csvs[ indices[it].first ], *csvs[ indices[it].second ], dist, dist2second, matchAll, anatFlag);
+            if (symFlag){
+                MatchVect* matchesSym = ComputeMatches(*csvs[ indices[it].second ], *csvs[ indices[it].first ], dist, dist2second, matchAll, anatFlag, true);
+                matches->insert(matches->end(), matchesSym->begin(), matchesSym->end());
+            }
 			#pragma omp critical
 			pairs[ indices[ it ].first ][ indices[ it ].second ] = matches;
 			sum += matches->size();
