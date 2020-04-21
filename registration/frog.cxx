@@ -35,6 +35,7 @@ int main( int argc, char *argv[] ) {
 		cout << "-ss number   : stats maximal sample size. Default : " << Stats::maxSize << endl;
 		cout << "-t threshold : inlier probability threshold. Default : " << group.inlierThreshold << endl;
 		cout << "-l path      : path containing reference landmarks." << endl;
+		cout << "-mf measure file      : path+name of measure.csv file." << endl;
 		return( 1 );
 
 	}
@@ -120,6 +121,10 @@ int main( int argc, char *argv[] ) {
 
 		if ( strcmp( key, "-l" ) == 0 ) {
 			group.readLandmarks( value );
+		}
+
+		if ( strcmp( key, "-mf" ) == 0 ) {
+			group.outputFileName = value;
 		}
 
 		argumentsIndex += 2;

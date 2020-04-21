@@ -104,7 +104,7 @@ void ImageGroup::run() {
 	cout << endl << "Total number of grids : " << totalNumberOfGrids << endl;
 	this->displayStats();
 	this->saveDistanceHistograms( "histograms.csv" );
-	this->saveMeasures( "measures.csv" );
+	this->saveMeasures( this->outputFileName );
 	this->saveTransforms();
 	this->saveBoundingBox();
 

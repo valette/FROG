@@ -72,6 +72,8 @@ public:
 	bool guaranteeDiffeomorphism; // to guarantee that transforms will be diffeomorpic
 	float maxDisplacementRatio; // max ratio to guarantee diffeomorphism
 
+	const char* outputFileName = "measures.csv"; // output filename of measure.csv
+
 	void saveTransforms();
 	void saveBoundingBox();
 
