@@ -1,7 +1,7 @@
 find_package( OpenMP REQUIRED )
 find_package( Boost COMPONENTS filesystem REQUIRED  iostreams REQUIRED )
 
-option(USE_SSE_FOR_MATCHING "Use SSE instructions for matching (may crash on old computers)" ON)
+option(USE_SSE_FOR_MATCHING "Use SSE instructions for matching (may crash on old computers)" OFF)
 
 if(USE_SSE_FOR_MATCHING)
 
