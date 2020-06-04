@@ -55,6 +55,8 @@ int main( int argc, char *argv[] ) {
 
 		}
 
+		image->Delete();
+
 	}
 
 	vtkNIFTIImageWriter *writer = vtkNIFTIImageWriter::New();
