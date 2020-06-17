@@ -803,7 +803,8 @@ void ImageGroup::readLandmarks( const char *path ) {
 				string coord = line.substr( 0, pos );
 				line.erase( 0, pos + 1 );				
 				landmark.xyz[ j ] = stof( coord );
-				if ( j < 2 ) landmark.xyz[ j ] *= -1; // get opposite x and y coordinates!
+				if ( j < 2 && this->invertLandmarksCoordinates )
+					landmark.xyz[ j ] *= -1; // get opposite x and y coordinates!
 
 			}
 

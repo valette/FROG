@@ -71,6 +71,7 @@ public:
 	float inlierThreshold; // to filter outliers completely
 	bool guaranteeDiffeomorphism; // to guarantee that transforms will be diffeomorpic
 	float maxDisplacementRatio; // max ratio to guarantee diffeomorphism
+	bool invertLandmarksCoordinates; // if true the landmarks coordinates x and y will be inverted when loading
 
 	const char* outputFileName = "measures.csv"; // output filename of measure.csv
 
@@ -85,7 +86,8 @@ public:
 	ImageGroup() : linearIterations( 50 ), deformableIterations( 200 ),
 		linearAlpha( 0.5 ), deformableAlpha( 0.02 ),
 		deformableLevels( 3 ), guaranteeDiffeomorphism( true ),
-		maxDisplacementRatio( 0.4 ), useScale( true ), statIntervalUpdate( 10 ),
+		invertLandmarksCoordinates( true ), maxDisplacementRatio( 0.4 ),
+		useScale( true ), statIntervalUpdate( 10 ),
 		initialGridSize( 100 ), boundingBoxMargin( 0.1 ), inlierThreshold( 0.5 ),
 		printStats( false ), printLinear( false ) {};
 

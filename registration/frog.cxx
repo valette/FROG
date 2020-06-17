@@ -25,6 +25,7 @@ int main( int argc, char *argv[] ) {
 		cout << "-g spacing   : initial grid spacing for deformable. Default : " << group.initialGridSize << endl;
 		cout << "-gd 0/1      : guaranteed diffeomorphism. Default : " << group.guaranteeDiffeomorphism << endl;
 		cout << "-gm ratio    : maximal displacement ratio to guarantee diffeomorphism. Default : " << group.maxDisplacementRatio << endl;
+		cout << "-il 0/1      : invert landmarks x and y coordinates. Default : " << group.invertLandmarksCoordinates << endl;
 		cout << "-la <value>  : set alpha for linear registration. Default : " << group.linearAlpha << endl;
 		cout << "-li number   : number of iterations for linear registration. Default : " << group.linearIterations << endl;
 		cout << "-lv <value>  : set linear averaging method. Default : " << group.linearAverageMethod << endl;
@@ -41,6 +42,7 @@ int main( int argc, char *argv[] ) {
 	}
 
 	int argumentsIndex = 2;
+	char *landmarks = 0;
 
 	while (argumentsIndex < argc) {
 
@@ -83,6 +85,10 @@ int main( int argc, char *argv[] ) {
 			group.maxDisplacementRatio = atof( value );
 		}
 
+		if ( strcmp( key, "-il" ) == 0 ) {
+			group.invertLandmarksCoordinates = atoi( value );
+		}
+
 		if ( strcmp( key, "-la" ) == 0) {
 			group.linearAlpha = atof( value );
 		}
@@ -120,7 +126,7 @@ int main( int argc, char *argv[] ) {
 		}
 
 		if ( strcmp( key, "-l" ) == 0 ) {
-			group.readLandmarks( value );
+			landmarks = value;
 		}
 
 		if ( strcmp( key, "-mf" ) == 0 ) {
@@ -131,6 +137,7 @@ int main( int argc, char *argv[] ) {
 
 	}
 
+	if ( landmarks ) group.readLandmarks( landmarks );
 	char *inputFile = argv[1];
 	cout << "Reading : " << inputFile << endl;
 	group.readPairs( inputFile );
