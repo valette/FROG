@@ -226,7 +226,7 @@ inline float norm(Descriptor& pts1, Descriptor& pts2, int size) {
 
 #endif
 
-MatchVect* ComputeMatches(CSV &csv2, CSV &csv1, float threshold, float dist2second, bool matchAll, bool anatFlag, bool sym = false) {
+MatchVect* ComputeMatches(CSV &csv2, CSV &csv1, float threshold, float dist2second, bool matchAll, float anatVal, bool sym = false) {
 
 	MatchVect* matches = new MatchVect();
 	float d1, d2;
@@ -251,7 +251,7 @@ MatchVect* ComputeMatches(CSV &csv2, CSV &csv1, float threshold, float dist2seco
 			float dist = norm(csv1[i].desc, csv2[j].desc, csv1[i].desc.size() );
 
 			//Anatomical test (euclidian norm after transform)
-			if (anatFlag == true){
+			if (anatVal != 0){
 				float x1 = csv1[i].meta[0];
 				float y1 = csv1[i].meta[1];
 				float z1 = csv1[i].meta[2];
@@ -261,7 +261,7 @@ MatchVect* ComputeMatches(CSV &csv2, CSV &csv1, float threshold, float dist2seco
 				
 				float euclNorm = sqrt((x1-x2)*(x1-x2) + (y1-y2)*(y1-y2) + (z1-z2)*(z1-z2));
 
-				if (euclNorm > 50){
+				if (euclNorm > anatVal){
 					continue;
 				}
 			}
@@ -328,8 +328,10 @@ int main( int argc, char *argv[] ) {
 	bool writePoints = false;
 	char* outputFileName = 0;
 	int argumentsIndex = 2;
-	bool anatFlag = false;
+	float anatVal = 0.0;
 	bool symFlag = false;
+	int target = -1;
+
 	while (argumentsIndex < argc) {
 
 		char* key = argv[argumentsIndex];
@@ -380,13 +382,17 @@ int main( int argc, char *argv[] ) {
 		}
 		
 		if (strcmp(key, "-anat") == 0){
-			anatFlag = true;
-			argumentsIndex -= 1;
+			anatVal = atof(value);
 		}
 		if (strcmp(key, "-sym") == 0){
 			symFlag = true;
 			argumentsIndex-=1;
         }
+
+		if (strcmp(key, "-targ") == 0){
+			target = atoi(value);
+		}
+
 		argumentsIndex += 2;
 	}
 
@@ -547,9 +553,15 @@ int main( int argc, char *argv[] ) {
 
 	vector< pair<int, int> > indices;
 	for (int i = 0 ; i < csvs.size()-1 ; i++) {
-		for (int j = i+1 ; j < csvs.size() ; j++) {
-			indices.push_back( make_pair(i, j) );
-		}
+		if (target >= 0){
+			if (i != target ){
+				indices.push_back( make_pair(i, target) );
+			}
+		} else {
+			for (int j = i+1 ; j < csvs.size() ; j++) {
+				indices.push_back( make_pair(i, j) );
+			}
+		}	
 	}
 
 	vector < vector< MatchVect* > > pairs;
@@ -564,9 +576,9 @@ int main( int argc, char *argv[] ) {
 	{
 		#pragma omp for reduction(+:sum) schedule(dynamic)
 		for (int it = 0 ; it < indices.size() ; it++) {
-			MatchVect* matches = ComputeMatches(*csvs[ indices[it].first ], *csvs[ indices[it].second ], dist, dist2second, matchAll, anatFlag);
+			MatchVect* matches = ComputeMatches(*csvs[ indices[it].first ], *csvs[ indices[it].second ], dist, dist2second, matchAll, anatVal);
             if (symFlag){
-                MatchVect* matchesSym = ComputeMatches(*csvs[ indices[it].second ], *csvs[ indices[it].first ], dist, dist2second, matchAll, anatFlag, true);
+                MatchVect* matchesSym = ComputeMatches(*csvs[ indices[it].second ], *csvs[ indices[it].first ], dist, dist2second, matchAll, anatVal, true);
                 matches->insert(matches->end(), matchesSym->begin(), matchesSym->end());
             }
 			#pragma omp critical
