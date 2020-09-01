@@ -906,28 +906,29 @@ void ImageGroup::readPairs( char *inputFile ) {
 
 	FILE *file = fopen( inputFile ,"rb");
 	unsigned short nImages;
-	fread(&nImages, sizeof(unsigned short), 1, file);
+	int unused;
+	unused = fread(&nImages, sizeof(unsigned short), 1, file);
 	this->images.resize( nImages );
 
 	for ( int i = 0; i < nImages; i++) {
 
 		unsigned short nameLength=18;
-		fread( &nameLength, sizeof(unsigned short), 1, file);
+		unused = fread( &nameLength, sizeof(unsigned short), 1, file);
 		char name[ nameLength + 1 ];
-		fread( name, sizeof(char), nameLength, file);
+		unused = fread( name, sizeof(char), nameLength, file);
 		name[ nameLength ] = 0;
 		Image *image = &this->images[ i ];
-		fread( image->refTranslation, sizeof( double ), 3, file );
+		unused = fread( image->refTranslation, sizeof( double ), 3, file );
 		pointIdType nPoints;
-		fread( &nPoints, sizeof( pointIdType ), 1, file );
+		unused = fread( &nPoints, sizeof( pointIdType ), 1, file );
 		image->points.resize( nPoints );
 
 		for ( int j = 0; j < nPoints; j++) {
 
 			Point *pt = & image->points[ j ];
-			fread( pt->original_xyz, sizeof( float ), 3, file );
+			unused = fread( pt->original_xyz, sizeof( float ), 3, file );
 			for ( int k = 0; k < 3; k++ ) pt->xyz[ k ] = pt->original_xyz[ k ];
-			fread( pt->other, sizeof( float ), 3, file );
+			unused = fread( pt->other, sizeof( float ), 3, file );
 
 		}
 
@@ -935,11 +936,11 @@ void ImageGroup::readPairs( char *inputFile ) {
 
 	unsigned short image1, image2;
 
-	while ( fread( &image1, sizeof( unsigned short ), 1, file ) ) {
+	while ( unused = fread( &image1, sizeof( unsigned short ), 1, file ) ) {
 
-		fread( &image2, sizeof( unsigned short ), 1, file );
+		unused = fread( &image2, sizeof( unsigned short ), 1, file );
 		unsigned int size;
-		fread(&size, sizeof(unsigned int), 1, file);
+		unused = fread(&size, sizeof(unsigned int), 1, file);
 
 		if ( !size ) {
 
@@ -951,8 +952,8 @@ void ImageGroup::readPairs( char *inputFile ) {
 		for ( int i = 0; i < size; i++ ) {
 
 			pointIdType point1, point2;
-			fread(&point1, sizeof(pointIdType), 1, file);
-			fread(&point2, sizeof(pointIdType), 1, file);
+			unused = fread(&point1, sizeof(pointIdType), 1, file);
+			unused = fread(&point2, sizeof(pointIdType), 1, file);
 			Link link1;
 			Link link2;
 			link1.image = image1;
