@@ -161,20 +161,21 @@ CSV* readBinary(string filename) {
 
 		CSVrow row;
 		float valF;
-		fread(&valF, sizeof(float), 1, file);
+		int unused;
+		unused = fread(&valF, sizeof(float), 1, file);
 		row.meta.push_back(valF);
-		fread(&valF, sizeof(float), 1, file);
+		unused = fread(&valF, sizeof(float), 1, file);
 		row.meta.push_back(valF);
-		fread(&valF, sizeof(float), 1, file);
+		unused = fread(&valF, sizeof(float), 1, file);
 		row.meta.push_back(valF);
-		fread(&valF, sizeof(float), 1, file);
+		unused = fread(&valF, sizeof(float), 1, file);
 		row.meta.push_back(valF);
-		fread(&valF, sizeof(float), 1, file);
+		unused = fread(&valF, sizeof(float), 1, file);
 		row.meta.push_back(valF);
-		fread(&valF, sizeof(float), 1, file);
+		unused = fread(&valF, sizeof(float), 1, file);
 		row.meta.push_back(valF);
 		row.desc.resize(48);
-		fread(row.desc.data(), sizeof(float), 48, file);
+		unused = fread(row.desc.data(), sizeof(float), 48, file);
 		myCSV->push_back(row);
 
 	}
