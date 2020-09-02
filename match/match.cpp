@@ -21,12 +21,14 @@
 #include <boost/iostreams/copy.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
 #include "immintrin.h"
+
+#include "../tools/pointIdType.h"
+
 #define IS_ALIGNED(addr,size)   ((((size_t)(addr)) % (size)) == 0)
 
 namespace fs = boost::filesystem;
 using namespace std;
 
-typedef unsigned int pointIdType;
 typedef vector<float, boost::alignment::aligned_allocator<float, 32> > Descriptor;
 typedef pair<pointIdType, pointIdType> Match;
 typedef vector<Match> MatchVect;
