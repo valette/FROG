@@ -82,6 +82,7 @@ public:
 	std::map < std::string, Landmarks* > landmarks;
 	void readLandmarks( const char *path );
 	bool computeLandmarkDistances( Measure &measure );
+	void saveLandmarkDistances();
 
 	ImageGroup() : linearIterations( 50 ), deformableIterations( 200 ),
 		linearAlpha( 0.5 ), deformableAlpha( 0.02 ),

@@ -107,6 +107,7 @@ void ImageGroup::run() {
 	this->saveMeasures( this->outputFileName );
 	this->saveTransforms();
 	this->saveBoundingBox();
+	this->saveLandmarkDistances();
 
 }
 
@@ -898,6 +899,66 @@ bool ImageGroup::computeLandmarkDistances( Measure &measure ) {
 	measure.landmarkMax = *max;
 	measure.landmarkSTD = stdev;
 	return true;
+
+}
+
+
+void ImageGroup::saveLandmarkDistances() {
+
+	std::fstream fs;
+	fs.open( "distances.txt", fstream::out | fstream::trunc );
+
+	if ( !this->landmarks.size() ) return;
+	vector < Landmarks* > landmarkV;
+
+	for ( auto iter = this->landmarks.begin(); iter != landmarks.end(); iter++) {
+
+		landmarkV.push_back( iter->second );
+
+	}
+
+	for ( int i = 0; i < landmarkV.size(); i++ ) {
+
+		Landmarks *landmarks = landmarkV[ i ];
+		float center[] = { 0, 0, 0 };
+		int n = 0;
+
+		for ( int i = 0; i < landmarks->size(); i++ ) {
+
+			Landmark &landmark = landmarks[ 0 ][ i ];
+			if ( landmark.image > ( this->images.size() - 1 ) ) continue;
+			n++;
+			float xyz2[ 3 ];
+			this->images[ landmark.image ].allTransforms->TransformPoint(
+				landmark.xyz, xyz2 );
+
+			for ( int k = 0; k < 3; k++ ) center[ k ] += xyz2[ k ];
+
+		}
+
+		for ( int k = 0; k < 3; k++ ) center[ k ] /= n;
+
+		for ( int i = 0; i < landmarks->size(); i++ ) {
+
+			Landmark &landmark = landmarks[ 0 ][ i ];
+			if ( landmark.image > ( this->images.size() - 1 ) ) continue;
+			float distance2 = 0;
+			float xyz2[ 3 ];
+			this->images[ landmark.image ].allTransforms->TransformPoint(
+				landmark.xyz, xyz2 );
+
+			for ( int k = 0; k < 3; k++ ) {
+				float diff = xyz2[ k ] - center[ k ];
+				distance2 += diff * diff;
+			}
+
+			fs << sqrt( distance2 ) << endl;
+
+		}
+
+	}
+
+	fs.close();
 
 }
 
