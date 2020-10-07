@@ -905,21 +905,13 @@ bool ImageGroup::computeLandmarkDistances( Measure &measure ) {
 
 void ImageGroup::saveLandmarkDistances() {
 
+	if ( !this->landmarks.size() ) return;
 	std::fstream fs;
 	fs.open( "distances.txt", fstream::out | fstream::trunc );
 
-	if ( !this->landmarks.size() ) return;
-	vector < Landmarks* > landmarkV;
-
 	for ( auto iter = this->landmarks.begin(); iter != landmarks.end(); iter++) {
 
-		landmarkV.push_back( iter->second );
-
-	}
-
-	for ( int i = 0; i < landmarkV.size(); i++ ) {
-
-		Landmarks *landmarks = landmarkV[ i ];
+		Landmarks *landmarks = iter->second;
 		float center[] = { 0, 0, 0 };
 		int n = 0;
 
@@ -952,7 +944,7 @@ void ImageGroup::saveLandmarkDistances() {
 				distance2 += diff * diff;
 			}
 
-			fs << sqrt( distance2 ) << endl;
+			fs << sqrt( distance2 ) << "," << iter->first << "," << landmark.image << endl;
 
 		}
 
