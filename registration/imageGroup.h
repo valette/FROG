@@ -94,6 +94,7 @@ protected:
 	// reference landmarks
 	std::map < std::string, Landmarks* > landmarks;
 	bool computeLandmarkDistances( Measure &measure );
+	void saveLandmarkDistances();
 
 	void readAndApplyFixedImagesTransforms();
 
