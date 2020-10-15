@@ -22,13 +22,14 @@ int main( int argc, char *argv[] ) {
 		cout << "-di number   : number of iterations for each deformable level. Default : " << group.deformableIterations << endl;
 		cout << "-dl number   : number of deformable levels. Default : " << group.deformableLevels << endl;
 		cout << "-emi number  : max number of iterations for EM weighting. Default : " << Stats::maxIterations << endl;
+		cout << "-fi number   : number of fixed images. Default : " << group.numberOfFixedImages << endl;
+		cout << "-fd path     : fixed images transforms directory." << endl;
 		cout << "-g spacing   : initial grid spacing for deformable. Default : " << group.initialGridSize << endl;
 		cout << "-gd 0/1      : guaranteed diffeomorphism. Default : " << group.guaranteeDiffeomorphism << endl;
 		cout << "-gm ratio    : maximal displacement ratio to guarantee diffeomorphism. Default : " << group.maxDisplacementRatio << endl;
 		cout << "-il 0/1      : invert landmarks x and y coordinates. Default : " << group.invertLandmarksCoordinates << endl;
 		cout << "-la <value>  : set alpha for linear registration. Default : " << group.linearAlpha << endl;
 		cout << "-li number   : number of iterations for linear registration. Default : " << group.linearIterations << endl;
-		cout << "-lv <value>  : set linear averaging method. Default : " << group.linearAverageMethod << endl;
 		cout << "-nt <number> : set number of threads. Default : number of cores" << endl;
 		cout << "-s 0/1       : use scale for linear registration. Default : " << group.useScale << endl;
 		cout << "-se number   : stats epsilon. Default : " << Stats::epsilon << endl;
@@ -73,6 +74,14 @@ int main( int argc, char *argv[] ) {
 			Stats::maxIterations = atoi( value );
 		}
 
+		if ( strcmp( key, "-fi" ) == 0 ) {
+			group.numberOfFixedImages = atoi( value );
+		}
+
+		if ( strcmp( key, "-fd" ) == 0 ) {
+			group.fixedTransformsDirectory = value;
+		}
+
 		if ( strcmp( key, "-g" ) == 0 ) {
 			group.initialGridSize = atof( value );
 		}
@@ -95,10 +104,6 @@ int main( int argc, char *argv[] ) {
 
 		if ( strcmp( key, "-li" ) == 0 ) {
 			group.linearIterations = atoi( value );
-		}
-
-		if ( strcmp( key, "-lv" ) == 0 ) {
-			group.linearAverageMethod = atoi( value );
 		}
 
 		if ( strcmp( key, "-nt" ) == 0 ) {

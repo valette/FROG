@@ -21,6 +21,6 @@ public:
 
 	vtkGeneralTransform *allTransforms;
 
-	Image () : gradient( 0 ) {};
+	Image () : gradient( 0 ), transform( 0 ), allTransforms( 0 ) {};
 
 };

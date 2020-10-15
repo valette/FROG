@@ -27,43 +27,18 @@ public:
 class ImageGroup {
 
 public:
-	
-	std::vector < Image > images;
-	std::vector < Measure > measures;
 
 	void run();
-
-	void setupStats();
-
-	void setupDeformableTransforms( int level );
-	void setupLinearTransforms();
-
-	void transformPoints( bool apply = false );
-
-	void updateStats(); // compute Maxwell distribution parameters
-
-	double updateDeformableTransforms(); // return true if diffeomorphism is guaranteed
-	double updateLinearTransforms();
-
-	void displayStats();
-	void displayLinearTransforms();
-
-	void saveIndividualDistanceHistograms();
-	void saveDistanceHistograms( const char *file );
-	void saveMeasures( const char *file );
+	void readPairs( char *fileName ); // read pair file from match
 
 	bool printStats; // print stats at each iteration
 	bool printLinear; // print linear transforms at each iteration
-
-	void readPairs( char *fileName ); // read pair file from match
-	void getBoundingBox( float *box );
 
 	int linearIterations; // number of iterations for linear registration
 	bool useScale; // use scale for linear registration
 	int deformableLevels; // number of deformable levels
 	int deformableIterations; // number of iteration for each level
 	float linearAlpha; // update ratio
-	int linearAverageMethod; // 0 : set volume 0 scale to 1. 1 : use scale average
 	float deformableAlpha; // update ratio
 	int statIntervalUpdate; // update stats every n iterations
 	float initialGridSize;
@@ -75,20 +50,51 @@ public:
 
 	const char* outputFileName = "measures.csv"; // output filename of measure.csv
 
+	int numberOfFixedImages;
+	char *fixedTransformsDirectory;
+
+	void readLandmarks( const char *path );
+
+	ImageGroup() : linearIterations( 50 ), deformableIterations( 200 ),
+		linearAlpha( 0.5 ), deformableAlpha( 0.02 ),
+		deformableLevels( 3 ), fixedTransformsDirectory( 0 ),guaranteeDiffeomorphism( true ),
+		invertLandmarksCoordinates( true ), maxDisplacementRatio( 0.4 ),
+		numberOfFixedImages( 0 ), useScale( true ), statIntervalUpdate( 10 ),
+		initialGridSize( 100 ), boundingBoxMargin( 0.1 ), inlierThreshold( 0.5 ),
+		printStats( false ), printLinear( false ) {};
+
+protected:
+
+	std::vector < Image > images;
+	std::vector < Measure > measures;
+
+	void setupStats();
+
+	void setupDeformableTransforms( int level );
+	void setupLinearTransforms();
+
+	void transformPoints( bool apply = false );
+
+	void updateStats(); // compute Maxwell distribution parameters
+
+	double updateDeformableTransforms(); // returns error value or -1 if diffeomorphism is not guaranteed
+	double updateLinearTransforms();
+
+	void displayStats();
+	void displayLinearTransforms();
+
+	void saveIndividualDistanceHistograms();
+	void saveDistanceHistograms( const char *file );
+	void saveMeasures( const char *file );
+	void getBoundingBox( float *box, bool all = false );
+
 	void saveTransforms();
 	void saveBoundingBox();
 
 	// reference landmarks
 	std::map < std::string, Landmarks* > landmarks;
-	void readLandmarks( const char *path );
 	bool computeLandmarkDistances( Measure &measure );
 
-	ImageGroup() : linearIterations( 50 ), deformableIterations( 200 ),
-		linearAlpha( 0.5 ), deformableAlpha( 0.02 ),
-		deformableLevels( 3 ), guaranteeDiffeomorphism( true ),
-		invertLandmarksCoordinates( true ), maxDisplacementRatio( 0.4 ),
-		useScale( true ), statIntervalUpdate( 10 ),
-		initialGridSize( 100 ), boundingBoxMargin( 0.1 ), inlierThreshold( 0.5 ),
-		printStats( false ), printLinear( false ) {};
+	void readAndApplyFixedImagesTransforms();
 
 };

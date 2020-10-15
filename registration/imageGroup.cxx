@@ -21,6 +21,9 @@ using namespace std;
 
 void ImageGroup::run() {
 
+	// read transform if there are fixed images
+	if ( this->numberOfFixedImages ) readAndApplyFixedImagesTransforms();
+
 	// linear registration
 	cout << endl << "Linear registration" << endl;
 	this->setupStats();
@@ -110,7 +113,6 @@ void ImageGroup::run() {
 
 }
 
-
 void ImageGroup::setupDeformableTransforms( int level ) {
 
 	double size = this->initialGridSize / pow( 2, level ); // grid size
@@ -152,7 +154,7 @@ void ImageGroup::setupDeformableTransforms( int level ) {
 	cout << "Grid dimensions (control points): ";
 	print( dims, 3 );
 
-	for ( int i = 0; i < this->images.size(); i++ ) {
+	for ( int i = this->numberOfFixedImages; i < this->images.size(); i++ ) {
 
 		vtkImageData *coeffs = vtkImageData::New();
 		coeffs->SetOrigin( origin );
@@ -205,7 +207,7 @@ double ImageGroup::updateDeformableTransforms() {
 	double sDistances = 0, sWeights = 0;
 
 	#pragma omp parallel for reduction( +:sDistances, sWeights )
-	for ( int image1 = 0; image1 < this->images.size(); image1++ ) {
+	for ( int image1 = this->numberOfFixedImages; image1 < this->images.size(); image1++ ) {
 
 		Image &image = this->images[ image1 ];
 		float *gradient = ( float* ) image.gradient->GetScalarPointer();
@@ -352,7 +354,7 @@ double ImageGroup::updateDeformableTransforms() {
 	int dims[ 3 ];
 	double spacing[ 3 ];
 
-	for ( int image = 0; image < nImages; image++ ) {
+	for ( int image = this->numberOfFixedImages; image < nImages; image++ ) {
 
 		vtkImageData *gradient = this->images[ image ].gradient;
 		gradient->GetDimensions( dims );
@@ -365,6 +367,7 @@ double ImageGroup::updateDeformableTransforms() {
 	int nCoeffs = 0, nBigCoeffs = 0;
 	int direction = 0;
 	const float maxD = this->maxDisplacementRatio;
+	const bool apply = this->numberOfFixedImages == 0;
 
 	//#pragma omp parallel for reduction( +:nCoeffs, nBigCoeffs )
 	for ( int i = 0; i < nValues; i++ ) {
@@ -375,15 +378,19 @@ double ImageGroup::updateDeformableTransforms() {
 
 			double sum = 0;
 
-			for ( int image = 0; image < nImages; image++ ) {
+			if ( apply ) {
 
-				sum += coeffs[ image ][ offset + j ];
+				for ( int image = this->numberOfFixedImages; image < nImages; image++ ) {
+
+					sum += coeffs[ image ][ offset + j ];
+
+				}
+
+				sum /= nImages;
 
 			}
 
-			sum /= nImages;
-
-			for ( int image = 0; image < nImages; image++ ) {
+			for ( int image = this->numberOfFixedImages; image < nImages; image++ ) {
 
 				coeffs[ image ][ offset + j ] -= sum;
 
@@ -405,7 +412,7 @@ double ImageGroup::updateDeformableTransforms() {
 
 	}
 
-	for ( int image1 = 0; image1 < nImages; image1++ ) {
+	for ( int image1 = this->numberOfFixedImages; image1 < nImages; image1++ ) {
 
 		Image &image = this->images[ image1 ];
 		vtkBSplineTransform *transform = ( vtkBSplineTransform * ) image.transform;
@@ -436,7 +443,6 @@ double ImageGroup::updateDeformableTransforms() {
 	return sqrt( sDistances / sWeights );
 
 }
-
 
 void ImageGroup::updateStats() {
 
@@ -481,10 +487,9 @@ void ImageGroup::updateStats() {
 
 }
 
-
 void ImageGroup::displayLinearTransforms() {
 
-	for ( int i = 0; i < this->images.size(); i++) {
+	for ( int i = this->numberOfFixedImages; i < this->images.size(); i++) {
 
 		cout << "Image " << i << ", translation=";
 		auto matrix = ( ( vtkMatrixToLinearTransform *) this->images[ i ].transform )->GetInput( );
@@ -511,14 +516,13 @@ void ImageGroup::displayLinearTransforms() {
 
 }
 
-
 void ImageGroup::setupLinearTransforms() {
 
 	float box[ 6 ];
 	float centers[ this->images.size() ][ 3 ];
 	float average[ 3 ] = { 0, 0, 0 };
 
-	for ( int i = 0; i < this->images.size(); i++ ) {
+	for ( int i = this->numberOfFixedImages; i < this->images.size(); i++ ) {
 
 		for ( int j = 0; j < 3; j++ ) {
 
@@ -533,14 +537,14 @@ void ImageGroup::setupLinearTransforms() {
 
 			float center = 0.5 * ( box[ 1 + 2 * j ] + box[ 2 * j ] );
 			centers[ i ][ j ] = center;
-			average[ j ] += center / ( float ) this->images.size();
+			average[ j ] += center / ( float ) ( this->images.size() - this->numberOfFixedImages );
 
 		}
 
 	}
 
 	// center volumes
-	for ( int i = 0; i < this->images.size() ; i++) {
+	for ( int i = this->numberOfFixedImages; i < this->images.size() ; i++) {
 
 		Image *image = &this->images[ i ];
 		image->transform = vtkMatrixToLinearTransform::New();
@@ -559,7 +563,6 @@ void ImageGroup::setupLinearTransforms() {
 	}
 
 }
-
 
 void ImageGroup::saveDistanceHistograms( const char *file ) {
 
@@ -598,7 +601,6 @@ void ImageGroup::saveDistanceHistograms( const char *file ) {
 
 }
 
-
 void ImageGroup::saveIndividualDistanceHistograms() {
 
 	for ( int i = 0; i < this->images.size(); i++) {
@@ -611,7 +613,6 @@ void ImageGroup::saveIndividualDistanceHistograms() {
 
 }
 
-
 void ImageGroup::displayStats() {
 
 	for ( int i = 0; i < this->images.size() ; i++) {
@@ -623,11 +624,10 @@ void ImageGroup::displayStats() {
 
 }
 
-
 void ImageGroup::transformPoints( bool apply ) {
 
 	#pragma omp parallel for
-	for ( int i = 0; i < this->images.size() ; i++ ) {
+	for ( int i = this->numberOfFixedImages; i < this->images.size() ; i++ ) {
 
 		Image *image = &this->images[ i ];
 		image->transformPoints();
@@ -651,13 +651,12 @@ void ImageGroup::transformPoints( bool apply ) {
 
 }
 
-
 double ImageGroup::updateLinearTransforms() {
 
 	double sDistances = 0, sWeights = 0;
 
 	#pragma omp parallel for reduction( +:sDistances, sWeights )
-	for ( int image1 = 0; image1 < this->images.size(); image1++ ) {
+	for ( int image1 = this->numberOfFixedImages; image1 < this->images.size(); image1++ ) {
 
 		float diff[3];
 		double sDisp[ 3 ] = { 0, 0, 0 };
@@ -770,7 +769,6 @@ void ImageGroup::setupStats() {
 
 }
 
-
 void ImageGroup::readLandmarks( const char *path ) {
 
 	vector < string > files;
@@ -824,7 +822,6 @@ void ImageGroup::readLandmarks( const char *path ) {
 	}
 
 }
-
 
 bool ImageGroup::computeLandmarkDistances( Measure &measure ) {
 
@@ -901,7 +898,6 @@ bool ImageGroup::computeLandmarkDistances( Measure &measure ) {
 
 }
 
-
 void ImageGroup::readPairs( char *inputFile ) {
 
 	FILE *file = fopen( inputFile ,"rb");
@@ -971,13 +967,57 @@ void ImageGroup::readPairs( char *inputFile ) {
 
 }
 
+void ImageGroup::readAndApplyFixedImagesTransforms() {
+
+	if ( this->fixedTransformsDirectory )
+		cout << "Reading transforms in directory " << this->fixedTransformsDirectory << endl;
+
+	#pragma omp parallel for
+	for ( int i = 0; i < this->numberOfFixedImages; i++ ) {
+
+		Image *image = &this->images[ i ];
+
+		if ( this->fixedTransformsDirectory ) {
+
+			ostringstream file;
+			file << this->fixedTransformsDirectory << "/" << i << ".json";
+			image->allTransforms = readTransform( file.str().c_str() );
+
+		} else {
+
+			image->transform = vtkMatrixToLinearTransform::New();
+			image->allTransforms = vtkGeneralTransform::New();
+			image->allTransforms->PostMultiply();
+			image->allTransforms->Concatenate( image->transform );
+			vtkMatrix4x4 *matrix = vtkMatrix4x4::New();
+			matrix->Identity();
+			( ( vtkMatrixToLinearTransform *) image->transform )->SetInput( matrix );
+
+		}
+
+		Point *point = &image->points[ 0 ];
+
+		for ( int j = 0; j < image->points.size(); j++ ) {
+
+			image->allTransforms->TransformPoint( point->xyz, point->xyz2 );
+			for ( int k = 0; k < 3; k++ )
+				point->xyz[ k ] = point->xyz2[ k ];
+
+			point++;
+
+		}
+
+	}
+
+}
+
 void ImageGroup::saveTransforms() {
 
 	experimental::filesystem::create_directory( "tfm" );
 
 	// output to .tfm and .json
 	#pragma omp parallel for
-	for ( int image1 = 0; image1 < this->images.size(); image1++) {
+	for ( int image1 = this->numberOfFixedImages; image1 < this->images.size(); image1++) {
 
 		vtkGeneralTransform *trans = this->images[ image1 ].allTransforms;
 		ostringstream file;
@@ -1014,7 +1054,7 @@ void ImageGroup::saveBoundingBox() {
 	fstream fs;
 	fs.open( "bbox.json", fstream::out | fstream::trunc );
 	float box[ 6 ];
-	this->getBoundingBox( box );
+	this->getBoundingBox( box, true );
 	fs << "{ \"bbox\" : [ [";
 	fs << box[ 0 ] << "," << box [ 2 ] << "," << box [ 4 ] << "], [";
 	fs << box[ 1 ] << "," << box [ 3 ] << "," << box [ 5 ] << "] ] }";
@@ -1022,7 +1062,7 @@ void ImageGroup::saveBoundingBox() {
 
 }
 
-void ImageGroup::getBoundingBox( float *box ) {
+void ImageGroup::getBoundingBox( float *box, bool all ) {
 
 	for ( int i = 0; i < 3; i++ ) {
 
@@ -1031,7 +1071,7 @@ void ImageGroup::getBoundingBox( float *box ) {
 
 	}
 
-	for (int i = 0; i < this->images.size(); i++ ) {
+	for (int i = all ? 0 : this->numberOfFixedImages; i < this->images.size(); i++ ) {
 
 		this->images[ i ].expandBoundingBox( box );
 
