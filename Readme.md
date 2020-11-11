@@ -36,7 +36,7 @@ This code is distributed under the CeCILL-B license (BSD-compatible)
 
 Note for FEDORA linux : in case of crashes, please use a self-compiled version of VTK.
 
-### Usage ###
+### Usage with global script run.sh ###
 
 Groupwise registration is computed via the run.sh script, in three steps:
 * Keypoint extraction from input images
@@ -58,5 +58,63 @@ will transform input images and compute their average with a spacing equal to 2
 To check that the output transforms are diffeomorphic:
 
 	./checkDiffeomorphism.sh ./params.sh
+
+
+### Usage with custom commandline execution ###
+
+Three steps are needed to compute groupwise registration:
+* Keypoint extraction from input images
+
+use the surf3d executable to extract keypoints from each 3D image:
+
+	bin/surf3d inputImage [options]
+
+Documentation for this program is available here: https://github.com/valette/vtkOpenSURF3D
+
+* Keypoint matching
+
+Edit a text file (e.g. myPointFiles.txt) containing the list of keypoint files to match.
+use the match executable. Then:
+
+	bin/match myPointFiles.txt [options]
+
+Options:
+
+	* -d distance : set max distance between matches. Default : 0.22
+	* -d2 distance2secondRatio : maximum closestDistance / distance2second ratio. Default : 1
+
+This program outputs a binary pairs.bin file describing matches between keypoints. Reading the binary file can easily be done, as shown in the frog code: https://github.com/valette/FROG/blob/master/registration/imageGroup.cxx#L953
+
+* Groupwise registration of keypoints
+
+Finally, groupwise registration can occur, with the frog program:
+
+	bin/frog pairs.bin [options]
+
+Options : 
+
+	 * -da <value>  : set alpha for deformable registration. Default : 0.02
+	 * -dlinear 0/1 : display linear parameters during registration. default : 0
+	 * -dstats 0/1  : display stats during registration. Default : 0
+	 * -di number   : number of iterations for each deformable level. Default : 200
+	 * -dl number   : number of deformable levels. Default : 3
+	 * -emi number  : max number of iterations for EM weighting. Default : 10000
+	 * -fi number   : number of fixed images. Default : 0
+	 * -fd path     : fixed images transforms directory.
+	 * -g spacing   : initial grid spacing for deformable. Default : 100
+	 * -gd 0/1      : guaranteed diffeomorphism. Default : 1
+	 * -gm ratio    : maximal displacement ratio to guarantee diffeomorphism. Default : 0.4
+	 * -il 0/1      : invert landmarks x and y coordinates. Default : 1
+	 * -la <value>  : set alpha for linear registration. Default : 0.5
+	 * -li number   : number of iterations for linear registration. Default : 50
+	 * -nt <number> : set number of threads. Default : number of cores
+	 * -s 0/1       : use scale for linear registration. Default : 1
+	 * -se number   : stats epsilon. Default : 1e-06
+	 * -si number   : interval update for statistics. Default : 10
+	 * -ss number   : stats maximal sample size. Default : 10000
+	 * -t threshold : inlier probability threshold. Default : 0.5
+	 * -l path      : path containing reference landmarks.
+
+This results in a set of transform files (transformXX.json) which can be used to transform images using the VolumeTransform executable
 
 comments, suggestions : https://github.com/valette/FROG/issues
