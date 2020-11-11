@@ -18,5 +18,7 @@ export SURF_OTHER_PARAMS="" # other possible parameters, see documentation here:
 export MAX_DISTANCE=1
 export MATCH_OTHER_PARAMS="" # other possible match parameters
 
-# Optional path to landmarks
-#export LANDMARKS=/path/to/landmarks
+# FROG parameters
+
+#export LANDMARKS=/path/to/landmarks # path to landmarks to measure registration quality
+export MATCH_OTHER_PARAMS=""

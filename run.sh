@@ -101,7 +101,7 @@ fi
 
 registrationTime=`date +%s`
 
-launch "$REG $OUTPUT_PAIRS $LOPTIONS"
+launch "$REG $OUTPUT_PAIRS $LOPTIONS $MATCH_OTHER_PARAMS"
 
 endTime=`date +%s`
 
