@@ -71,26 +71,26 @@ then
 fi
 
 cd $RES_FOLDER
-CSVFile=points.csv;
+PointsFile=points.txt;
 
-if [ -f ${CSVFile} ]
+if [ -f ${PointsFile} ]
 then
-    rm ${CSVFile}
+    rm ${PointsFile}
 fi
 
 for (( CUR_IT=0; CUR_IT<${IMG_NUMBER}; CUR_IT++ ))
 do
 	IMG=${IMG_INPUT[CUR_IT]};
 	OUTPUT_POINTS=$RES_FOLDER/points$CUR_IT
-	launch "$SURF $IMG -t 0 -o $OUTPUT_POINTS -s $SPACING -t $THRESHOLD -n $NPOINTS"
-	echo ${OUTPUT_POINTS}.csv.gz,0,0,0 >> ${CSVFile}
+	launch "$SURF $IMG -o $OUTPUT_POINTS -s $SPACING -t $THRESHOLD -n $NPOINTS $SURF_OTHER_PARAMS"
+	echo ${OUTPUT_POINTS}.csv.gz>> ${PointsFile}
 
 done
 
 matchTime=`date +%s`
 
 OUTPUT_PAIRS=pairs.bin
-launch "$MATCH $CSVFile -o $OUTPUT_PAIRS -d $MAX_DISTANCE"
+launch "$MATCH $PointsFile -o $OUTPUT_PAIRS -d $MAX_DISTANCE $MATCH_OTHER_PARAMS"
 
 if [ -n "$LANDMARKS" ]
 then

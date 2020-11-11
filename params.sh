@@ -12,9 +12,11 @@ export RES_FOLDER=`pwd`/output
 export SPACING=0.75
 export THRESHOLD=0;
 export NPOINTS=20000;
+export SURF_OTHER_PARAMS="" # other possible parameters, see documentation here: https://github.com/valette/vtkOpenSURF3D
 
 # MATCH parameters
 export MAX_DISTANCE=1
+export MATCH_OTHER_PARAMS="" # other possible match parameters
 
 # Optional path to landmarks
 #export LANDMARKS=/path/to/landmarks

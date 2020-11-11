@@ -445,12 +445,17 @@ int main( int argc, char *argv[] ) {
 			}
 
 			v3 point;
-			std::getline(lineStream,cell,',');
-			point[0] = std::stof (cell);
-			std::getline(lineStream,cell,',');
-			point[1] = std::stof (cell);
-			std::getline(lineStream,cell,',');
-			point[2] = std::stof (cell);
+			point[ 0 ] = point[ 1 ] = point[ 2 ] = 0;
+
+			try {
+				std::getline(lineStream,cell,',');
+				point[0] = std::stof (cell);
+				std::getline(lineStream,cell,',');
+				point[1] = std::stof (cell);
+				std::getline(lineStream,cell,',');
+				point[2] = std::stof (cell);
+			} catch ( ... ) {}
+
 			rigids.push_back(point);
 
 		}
