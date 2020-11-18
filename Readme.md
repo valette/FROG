@@ -117,6 +117,6 @@ Options :
 
 FROG outputs several files:
  * a set of transform files (transformXX.json) which can be used to transform images using the VolumeTransform executable
- * histograms_linear.csv and histograms.csv, which provide histograms of distances (bin size = 1) between matching keypoints after registration (one histogram per input image). An example of such histograms is shown in figure 5 of the paper. histograms_linear.csv contains histograms after linear registration, histograms.csv contains histograms after deformable regstration.
+ * histograms_linear.csv and histograms.csv, which provide histograms of distances (bin size = 1) between matching keypoints after registration (one histogram per input image). An example of such histograms is shown in figure 5 of the paper [2]. histograms_linear.csv contains histograms after linear registration, histograms.csv contains histograms after deformable regstration.
 
 comments, suggestions : https://github.com/valette/FROG/issues
