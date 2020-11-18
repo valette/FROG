@@ -9,7 +9,7 @@ This code is the implementation deriving from those papers:
 
 [1] Rémi Agier, Sébastien Valette, Laurent Fanton, Pierre Croisille and Rémy Prost, Hubless 3D Medical Image Bundle Registration, In Proceedings of the 11th Joint Conference on Computer Vision, Imaging and Computer Graphics Theory and Applications - Volume 3: VISAPP, 265-272, 2016, Rome, Italy. https://hal.archives-ouvertes.fr/hal-01284240
 
-[2] Rémi Agier, Sébastien Valette, Razmig Kéchichian, Laurent Fanton, Rémy Prost, Hubless keypoint-based 3D deformable groupwise registration, Medical Image Analysis, Volume 59, January 2020
+[2] Rémi Agier, Sébastien Valette, Razmig Kéchichian, Laurent Fanton, Rémy Prost, Hubless keypoint-based 3D deformable groupwise registration, Medical Image Analysis, Volume 59, January 2020, https://arxiv.org/abs/1809.03951
 
 
 Authors:
@@ -115,6 +115,8 @@ Options :
 	 * -t threshold : inlier probability threshold. Default : 0.5
 	 * -l path      : path containing reference landmarks.
 
-This results in a set of transform files (transformXX.json) which can be used to transform images using the VolumeTransform executable
+FROG outputs several files:
+ * a set of transform files (transformXX.json) which can be used to transform images using the VolumeTransform executable
+ * histograms_linear.csv and histograms.csv, which provide histograms of distances (bin size = 1) between matching keypoints after registration (one histogram per input image). An example of such histograms is shown in figure 5 of the paper. histograms_linear.csv contains histograms after linear registration, histograms.csv contains histograms after deformable regstration.
 
 comments, suggestions : https://github.com/valette/FROG/issues
