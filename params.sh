@@ -21,4 +21,4 @@ export MATCH_OTHER_PARAMS="" # other possible match parameters
 # FROG parameters
 
 #export LANDMARKS=/path/to/landmarks # path to landmarks to measure registration quality
-export MATCH_OTHER_PARAMS=""
+export REGISTRATION_OTHER_PARAMS=""
