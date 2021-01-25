@@ -76,6 +76,7 @@ protected:
 	void transformPoints( bool apply = false );
 
 	void updateStats(); // compute Maxwell distribution parameters
+	void countInliers(); // displays number of inliers/outliers
 
 	double updateDeformableTransforms(); // returns error value or -1 if diffeomorphism is not guaranteed
 	double updateLinearTransforms();
@@ -95,6 +96,7 @@ protected:
 	std::map < std::string, Landmarks* > landmarks;
 	bool computeLandmarkDistances( Measure &measure );
 	void saveLandmarkDistances();
+
 
 	void readAndApplyFixedImagesTransforms();
 

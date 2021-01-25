@@ -88,12 +88,14 @@ void ImageGroup::run() {
 
 		}
 
+		this->countInliers();
 		cout << "Number of grids for this level : " << numberOfGrids << endl;
 		nGrids.push_back( numberOfGrids );
 		this->transformPoints( true );
 
 	}
 
+	this->countInliers();
 	int totalNumberOfGrids = 0;
 	cout << "Grids per level : ";
 
@@ -651,6 +653,62 @@ void ImageGroup::transformPoints( bool apply ) {
 	}
 
 }
+
+void ImageGroup::countInliers() {
+
+	int nPairs = 0, nInliers = 0, nOutliers = 0;
+
+	#pragma omp parallel for reduction( +:nPairs, nInliers, nOutliers )
+	for ( int image1 = this->numberOfFixedImages; image1 < this->images.size(); image1++ ) {
+
+		float diff[3];
+		Image &image = this->images[ image1 ];
+		Point *pointA = &image.points[ 0 ];
+		Stats *statsA = &image.stats;
+
+		for ( pointIdType point1 = 0; point1 < image.points.size(); point1++ ) {
+
+			float *pA = pointA->xyz2;
+
+			for ( auto link = pointA->links.begin(); link != pointA->links.end(); link++ ) {
+
+				Image *image2 = &this->images[ link->image ];
+				Point *pointB = &image2->points[ link->point ];
+				float *pB = pointB->xyz2;
+				float dist = 0;
+
+				for ( int k = 0; k < 3; k++ ) {
+
+					diff[ k ] = pB[ k ] - pA[ k ];
+					dist += diff[ k ] * diff[ k ];
+
+				}
+
+				dist = sqrt( dist );
+				float probA = statsA->getInlierProbability( dist );
+				float probB = image2->stats.getInlierProbability( dist );
+				float weight = min( probA, probB );
+				nPairs++;
+
+				if ( weight < this->inlierThreshold )
+					nOutliers++;
+				else
+					nInliers++;
+
+			}
+
+		}
+
+	}
+
+	cout << "Stats:" << endl;
+	cout << nPairs << " half pairs" << endl;
+	cout << nInliers << " inliers" << endl;
+	cout << nOutliers << " outliers" << endl;
+	cout << "Outlier ratio (%): " << ( float ) 100 * nOutliers / nPairs << endl;
+
+}
+
 
 double ImageGroup::updateLinearTransforms() {
 
