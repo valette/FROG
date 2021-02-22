@@ -12,24 +12,24 @@
 #include <chrono>
 #include <thread>
 
+# ifdef USE_SSE_FOR_MATCHING
 #include <boost/align/aligned_allocator.hpp>
-#include <boost/version.hpp>
-#include "boost/filesystem.hpp"
-#include "boost/algorithm/string/replace.hpp"
-#include <boost/iostreams/filtering_streambuf.hpp>
-#include <boost/iostreams/filtering_stream.hpp>
-#include <boost/iostreams/copy.hpp>
-#include <boost/iostreams/filter/gzip.hpp>
 #include "immintrin.h"
+#endif
+
+#include <boost/filesystem.hpp>
+#include <boost/iostreams/filtering_stream.hpp>
+#include <boost/iostreams/filter/gzip.hpp>
 
 #include "../tools/pointIdType.h"
 
-#define IS_ALIGNED(addr,size)   ((((size_t)(addr)) % (size)) == 0)
-
 namespace fs = boost::filesystem;
 using namespace std;
-
+# ifdef USE_SSE_FOR_MATCHING
 typedef vector<float, boost::alignment::aligned_allocator<float, 32> > Descriptor;
+#else
+typedef vector<float> Descriptor;
+#endif
 typedef pair<pointIdType, pointIdType> Match;
 typedef vector<Match> MatchVect;
 typedef std::tuple<unsigned short, unsigned short, MatchVect* > pairMatches;
@@ -185,6 +185,9 @@ CSV* readBinary(string filename) {
 	return myCSV;
 }
 
+
+# ifdef USE_SSE_FOR_MATCHING
+
 static inline float _mm256_reduce_add_ps(__m256 x) {
     /* ( x3+x7, x2+x6, x1+x5, x0+x4 ) */
     const __m128 x128 = _mm_add_ps(_mm256_extractf128_ps(x, 1), _mm256_castps256_ps128(x));
@@ -195,8 +198,6 @@ static inline float _mm256_reduce_add_ps(__m256 x) {
     /* Conversion to float is a no-op on x86-64 */
     return _mm_cvtss_f32(x32);
 }
-
-# ifdef USE_SSE_FOR_MATCHING
 
 // 75 op
 inline float norm(Descriptor& pts1, Descriptor& pts2, int size) {
