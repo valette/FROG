@@ -218,7 +218,6 @@ double ImageGroup::updateDeformableTransforms() {
 		vtkIdType increments[ 3 ];
 		double spacing[ 3 ];
 		double origin[ 3 ];
-		float diff[ 3 ];
 		image.gradient->GetSpacing( spacing );
 		image.gradient->GetOrigin( origin );
 		image.gradient->GetDimensions( dims );
@@ -246,8 +245,8 @@ double ImageGroup::updateDeformableTransforms() {
 
 				for ( int k = 0; k < 3; k++ ) {
 
-					diff[ k ] = pB[ k ] - pA[ k ];
-					dist += diff[ k ] * diff[ k ];
+					float diff = pB[ k ] - pA[ k ];
+					dist += diff * diff;
 
 				}
 
@@ -457,7 +456,6 @@ void ImageGroup::updateStats() {
 		Point *point = &image->points[ 0 ];
 		Stats *stats = &image->stats;
 		stats->reset();
-		float diff[ 3 ];
 
 		for ( pointIdType point1 = 0; point1 < image->points.size(); point1++ ) {
 
@@ -471,8 +469,8 @@ void ImageGroup::updateStats() {
 
 				for ( int k = 0; k < 3; k++ ) {
 
-					diff[ k ] = pB[ k ] - pA[ k ];
-					dist2 += diff[ k ] * diff[ k ];
+					float diff = pB[ k ] - pA[ k ];
+					dist2 += diff * diff;
 
 				}
 
@@ -661,7 +659,7 @@ void ImageGroup::countInliers() {
 	#pragma omp parallel for reduction( +:nPairs, nInliers, nOutliers )
 	for ( int image1 = this->numberOfFixedImages; image1 < this->images.size(); image1++ ) {
 
-		float diff[3];
+
 		Image &image = this->images[ image1 ];
 		Point *pointA = &image.points[ 0 ];
 		Stats *statsA = &image.stats;
@@ -679,8 +677,8 @@ void ImageGroup::countInliers() {
 
 				for ( int k = 0; k < 3; k++ ) {
 
-					diff[ k ] = pB[ k ] - pA[ k ];
-					dist += diff[ k ] * diff[ k ];
+					float diff = pB[ k ] - pA[ k ];
+					dist += diff * diff;
 
 				}
 

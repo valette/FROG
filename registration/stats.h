@@ -9,7 +9,7 @@
 using namespace std;
 
 // compute Chi probability (from normalized values)
-inline float chipdf( float x ) {
+inline float chipdf( const float &x ) {
 
 	float c =  0.797884560802865;
 	float x2 = x*x;
@@ -57,7 +57,7 @@ public:
 
 	};
 
-	void addSample( float sample, float weight = 1 ) {
+	void addSample( const float &sample, const float &weight = 1 ) {
 
 		if ( !this->needsRandom ) {
 
@@ -83,7 +83,7 @@ public:
 	void estimateDistribution();
 	void displayParameters();
 
-	inline float getInlierProbability( float d ) {
+	inline float getInlierProbability( const float &d ) {
 
 		const float eps = 1e-10;
 		float x1 = ratio * chipdf( d / ( c1 + eps ) ) / ( c1 + eps );
