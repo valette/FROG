@@ -1,5 +1,4 @@
 #include <chrono>
-#include <omp.h>
 #include <stdio.h>
 
 #include "imageGroup.h"

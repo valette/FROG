@@ -1,5 +1,6 @@
 #include <iostream>
 #include <map>
+#include <omp.h>
 #include <vector>
 
 #include "image.h"
