@@ -66,7 +66,7 @@ do
 	IMG=${IMG_INPUT[CUR_IT]};
 	TRANS=transformed$CUR_IT.nii.gz
 	if [ ! -e "$TRANS" ]; then
-		launch "$VOLUMETRANSFORM $IMG dummy.mhd -t tfm/$CUR_IT.tfm -o $TRANS"
+		launch "$VOLUMETRANSFORM $IMG dummy.mhd -t transforms/$CUR_IT.json -o $TRANS"
 	else
 		echo "Transformed file $TRANS already exists, skip transformation"
 	fi

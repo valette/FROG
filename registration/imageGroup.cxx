@@ -659,7 +659,6 @@ void ImageGroup::countInliers() {
 	#pragma omp parallel for reduction( +:nPairs, nInliers, nOutliers )
 	for ( int image1 = this->numberOfFixedImages; image1 < this->images.size(); image1++ ) {
 
-
 		Image &image = this->images[ image1 ];
 		Point *pointA = &image.points[ 0 ];
 		Stats *statsA = &image.stats;
@@ -1013,6 +1012,7 @@ void ImageGroup::readPairs( char *inputFile ) {
 	int unused;
 	unused = fread(&nImages, sizeof(unsigned short), 1, file);
 	this->images.resize( nImages );
+	int numberOfPairs = 0;
 
 	for ( int i = 0; i < nImages; i++) {
 
@@ -1069,9 +1069,12 @@ void ImageGroup::readPairs( char *inputFile ) {
 
 		}
 
+		numberOfPairs += size;
+
 	}
 
 	fclose(file);
+	cout << numberOfPairs << " pairs read : " << numberOfPairs * 2 << " half pairs " << endl;
 
 }
 
@@ -1121,7 +1124,7 @@ void ImageGroup::readAndApplyFixedImagesTransforms() {
 
 void ImageGroup::saveTransforms() {
 
-	experimental::filesystem::create_directory( "tfm" );
+	experimental::filesystem::create_directory( "transforms" );
 
 	// output to .tfm and .json
 	#pragma omp parallel for
@@ -1129,11 +1132,8 @@ void ImageGroup::saveTransforms() {
 
 		vtkGeneralTransform *trans = this->images[ image1 ].allTransforms;
 		ostringstream file;
-		file << "tfm/" << image1 << ".tfm";
-		writeTFM( trans, file.str().c_str() );
-		ostringstream file2;
-		file2 << "tfm/" << image1 << ".json";
-		writeFrogJSON( trans, file2.str().c_str() );
+		file << "transforms/" << image1 << ".json";
+		writeFrogJSON( trans, file.str().c_str() );
 
 	}
 
