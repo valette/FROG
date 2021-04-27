@@ -51,6 +51,7 @@ void ImageGroup::run() {
 	this->saveDistanceHistograms( "histograms_linear.csv" );
 	cout << endl << "Deformable registration" << endl;
 	vector< int > nGrids;
+	this->countInliers();
 
 	for ( int level = 0; level < this->deformableLevels; level++ ) {
 
@@ -95,7 +96,6 @@ void ImageGroup::run() {
 
 	}
 
-	this->countInliers();
 	int totalNumberOfGrids = 0;
 	cout << "Grids per level : ";
 
@@ -225,10 +225,9 @@ double ImageGroup::updateDeformableTransforms() {
 		double weights[ 3 ][ 4 ];
 		int nValues = 4 * dims[ 0 ] * dims[ 1 ] * dims[ 2 ];
 		for ( int i = 0; i < nValues; i++ ) gradient[ i ] = 0;
-		Point *point = &image.points[ 0 ];
 		Stats *statsA = &image.stats;
 
-		for ( pointIdType point1 = 0; point1 < image.points.size(); point1++ ) {
+		for ( auto point = image.points.begin(), end = image.points.end(); point != end; point++ ) {
 
 			const float *pos = point->xyz;
 			const float *pA = point->xyz2;
@@ -236,7 +235,7 @@ double ImageGroup::updateDeformableTransforms() {
 			float sDisp[ 3 ] = { 0, 0, 0 };
 			// compute point displacement
 
-			for ( auto link = point->links.begin(); link != point->links.end(); link++ ) {
+			for ( auto link = point->links.begin(), endL = point->links.end(); link != endL; link++ ) {
 
 				Image *image2 = &this->images[ link->image ];
 				Point *pointB = &image2->points[ link->point ];
@@ -268,7 +267,6 @@ double ImageGroup::updateDeformableTransforms() {
 
 			}
 
-			point++;
 			if ( sWeight == 0 ) continue;
 			// add point displacement to gradient
 			int idZ = 0;
@@ -453,14 +451,13 @@ void ImageGroup::updateStats() {
 	for ( int image1 = 0; image1 < this->images.size(); image1++) {
 
 		Image *image = &this->images[ image1 ];
-		Point *point = &image->points[ 0 ];
 		Stats *stats = &image->stats;
 		stats->reset();
 
-		for ( pointIdType point1 = 0; point1 < image->points.size(); point1++ ) {
+		for ( auto point = image->points.begin(), end = image->points.end(); point != end; point++ ) {
 
 			const float *pA = point->xyz2;
-			for ( auto link = point->links.begin(); link != point->links.end(); link++ ) {
+			for ( auto link = point->links.begin(), endL = point->links.end(); link != endL; link++ ) {
 
 				Image *image2 = &this->images[ link->image ];
 				Point *pointB = &image2->points[ link->point ];
@@ -477,8 +474,6 @@ void ImageGroup::updateStats() {
 				stats->addSample( sqrt( dist2 ) );
 
 			}
-
-			point++;
 
 		}
 
@@ -635,14 +630,10 @@ void ImageGroup::transformPoints( bool apply ) {
 
 		if ( apply ) {
 
-			Point *point = &image->points[ 0 ];
-
-			for ( int j = 0; j < image->points.size(); j++ ) {
+			for ( auto point = image->points.begin(), end = image->points.end(); point != end; point++ ) {
 
 				for ( int k = 0; k < 3; k++ )
 					point->xyz[ k ] = point->xyz2[ k ];
-
-				point++;
 
 			}
 
@@ -660,14 +651,13 @@ void ImageGroup::countInliers() {
 	for ( int image1 = this->numberOfFixedImages; image1 < this->images.size(); image1++ ) {
 
 		Image &image = this->images[ image1 ];
-		Point *pointA = &image.points[ 0 ];
 		Stats *statsA = &image.stats;
 
-		for ( pointIdType point1 = 0; point1 < image.points.size(); point1++ ) {
+		for ( auto pointA = image.points.begin(), end = image.points.end(); pointA != end; pointA++ ) {
 
 			float *pA = pointA->xyz2;
 
-			for ( auto link = pointA->links.begin(); link != pointA->links.end(); link++ ) {
+			for ( auto link = pointA->links.begin(), endL = pointA->links.end(); link != endL; link++ ) {
 
 				Image *image2 = &this->images[ link->image ];
 				Point *pointB = &image2->points[ link->point ];
@@ -722,14 +712,13 @@ double ImageGroup::updateLinearTransforms() {
 		double sPosB2[ 3 ] = { 0, 0, 0 };
 		double sWeight = 0;
 		Image &image = this->images[ image1 ];
-		Point *pointA = &image.points[ 0 ];
 		Stats *statsA = &image.stats;
 
-		for ( pointIdType point1 = 0; point1 < image.points.size(); point1++ ) {
+		for ( auto pointA = image.points.begin(), end = image.points.end(); pointA != end; pointA++ ) {
 
 			float *pA = pointA->xyz2;
 
-			for ( auto link = pointA->links.begin(); link != pointA->links.end(); link++ ) {
+			for ( auto link = pointA->links.begin(), endL = pointA->links.end(); link != endL; link++ ) {
 
 				Image *image2 = &this->images[ link->image ];
 				Point *pointB = &image2->points[ link->point ];
@@ -767,8 +756,6 @@ double ImageGroup::updateLinearTransforms() {
 
 			}
 
-			pointA++;
-
 		}
 
 		auto matrix = ( ( vtkMatrixToLinearTransform *) image.transform )->GetInput();
@@ -802,22 +789,17 @@ double ImageGroup::updateLinearTransforms() {
 void ImageGroup::setupStats() {
 
 	// add samples to statistics
-	for ( int image1 = 0; image1 < this->images.size(); image1++) {
+	for ( auto image = this->images.begin(); image != this->images.end(); image++ ) {
 
-		Image *image = &this->images[ image1 ];
-		Point *point = &image->points[ 0 ];
 		Stats *stats = &image->stats;
 
-		for ( pointIdType point1 = 0; point1 < image->points.size(); point1++ ) {
-
+		for ( auto point = image->points.begin(); point != image->points.end(); point++ ) {
 
 			for ( auto link = point->links.begin(); link != point->links.end(); link++ ) {
 
 				stats->addSlot();
 
 			}
-
-			point++;
 
 		}
 
@@ -1106,15 +1088,12 @@ void ImageGroup::readAndApplyFixedImagesTransforms() {
 
 		}
 
-		Point *point = &image->points[ 0 ];
-
-		for ( int j = 0; j < image->points.size(); j++ ) {
+		for ( auto point = image->points.begin(); point != image->points.end(); point++ ) {
 
 			image->allTransforms->TransformPoint( point->xyz, point->xyz2 );
+
 			for ( int k = 0; k < 3; k++ )
 				point->xyz[ k ] = point->xyz2[ k ];
-
-			point++;
 
 		}
 
