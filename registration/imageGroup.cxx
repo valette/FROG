@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <assert.h> 
 #include <experimental/filesystem>
 #include <iostream>
 #include <numeric>
@@ -7,6 +8,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <vector>
+
+#include <boost/iostreams/filtering_streambuf.hpp>
+#include <boost/iostreams/copy.hpp>
+#include <boost/iostreams/filter/gzip.hpp>
 
 #include <vtkBSplineTransform.h>
 #include <vtkImageData.h>
@@ -18,6 +23,14 @@
 #include "imageGroup.h"
 
 using namespace std;
+
+void checkNaN( float value ) {
+
+	if ( !isnan( value ) ) return;
+	cout << endl << "Error : NaN" << endl;
+	exit( 1 );
+
+}
 
 void ImageGroup::run() {
 
@@ -42,6 +55,7 @@ void ImageGroup::run() {
 		if ( this->printLinear ) this->displayLinearTransforms();
 		this->transformPoints();
 		cout << "E = " << measure.E;
+		checkNaN( measure.E );
 		if ( !this->computeLandmarkDistances( measure ) ) cout << endl;
 		this->measures.push_back( measure );
 
@@ -71,6 +85,7 @@ void ImageGroup::run() {
 			if ( this->printStats ) this->displayStats();
 			measure.E = this->updateDeformableTransforms();
 			cout << "E = " << measure.E;
+			checkNaN( measure.E );
 			if ( measure.E < 0 ) {
 
 				cout << " creating new grid" << endl;
@@ -113,6 +128,7 @@ void ImageGroup::run() {
 	this->saveTransforms();
 	this->saveBoundingBox();
 	this->saveLandmarkDistances();
+	if ( this->writePairs ) this->writeLinksDistances();
 
 }
 
@@ -640,6 +656,85 @@ void ImageGroup::transformPoints( bool apply ) {
 		}
 
 	}
+
+}
+
+bool comparePairs( const vector< float > &p1, const vector< float > & p2) {
+
+    return ( p1[ 4 ] < p2[ 4 ] );
+
+}
+
+void ImageGroup::writeLinksDistances() {
+
+	vector < vector< float > > pairs;
+
+	for ( int i1 = 0; i1 < this->images.size(); i1++ ) {
+
+		Image &image = this->images[ i1 ];
+		Stats *stats = &image.stats;
+
+		for ( int p1 = 0; p1 != image.points.size(); p1++ ) {
+
+			auto pointA = &image.points[ p1 ];
+			float *pA = pointA->xyz2;
+
+			for ( auto link = pointA->links.begin(), endL = pointA->links.end(); link != endL; link++ ) {
+
+				int i2 = link->image;
+				Image *image2 = &this->images[ i2 ];
+				int p2 = link->point;
+				Point *pointB = &image2->points[ p2 ];
+				float *pB = pointB->xyz2;
+				float dist = 0;
+
+				for ( int k = 0; k < 3; k++ ) {
+
+					float diff = pB[ k ] - pA[ k ];
+					dist += diff * diff;
+
+				}
+
+				dist = sqrt( dist );
+				vector< float > pair;
+				pair.push_back( i1 );
+				pair.push_back( p1 );
+				pair.push_back( i2 );
+				pair.push_back( p2 );
+				pair.push_back( dist );
+				pair.push_back( stats->getInlierProbability( dist ) );
+				pairs.push_back( pair );
+
+			}
+
+		}
+
+	}
+
+    sort( pairs.begin(), pairs.end(), comparePairs );
+
+	ofstream file( "pairs.csv.gz", ios_base::out | ios_base::binary);
+	boost::iostreams::filtering_streambuf<boost::iostreams::output> outbuf;
+    outbuf.push(boost::iostreams::gzip_compressor());
+    outbuf.push(file);
+    ostream out(&outbuf);
+
+	for ( int i = 0; i < pairs.size(); i++ ) {
+
+		vector< float > &pair = pairs[ i ];
+
+		for ( int j = 0; j < pair.size(); j++ ) {
+
+			out << pair[ j ];
+			if ( j < pair.size() - 1 ) out << ",";
+
+		}
+
+		if ( i  < pairs.size() - 1 ) out << "\n";
+	}
+
+	boost::iostreams::close( outbuf );
+	file.close();
 
 }
 

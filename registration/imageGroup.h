@@ -50,6 +50,8 @@ public:
 	bool invertLandmarksCoordinates; // if true the landmarks coordinates x and y will be inverted when loading
 
 	const char* outputFileName = "measures.csv"; // output filename of measure.csv
+	void writeLinksDistances(); // write distances and probabilities between pairs to file
+	bool writePairs; // if true the pairs and their distances will be written to pairs.csv
 
 	int numberOfFixedImages;
 	char *fixedTransformsDirectory;
@@ -62,7 +64,7 @@ public:
 		invertLandmarksCoordinates( true ), maxDisplacementRatio( 0.4 ),
 		numberOfFixedImages( 0 ), useScale( true ), statIntervalUpdate( 10 ),
 		initialGridSize( 100 ), boundingBoxMargin( 0.1 ), inlierThreshold( 0.5 ),
-		printStats( false ), printLinear( false ) {};
+		printStats( false ), printLinear( false ), writePairs( false ) {};
 
 protected:
 

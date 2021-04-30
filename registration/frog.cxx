@@ -36,7 +36,9 @@ int main( int argc, char *argv[] ) {
 		cout << "-ss number   : stats maximal sample size. Default : " << Stats::maxSize << endl;
 		cout << "-t threshold : inlier probability threshold. Default : " << group.inlierThreshold << endl;
 		cout << "-l path      : path containing reference landmarks." << endl;
-		cout << "-mf measure file      : path+name of measure.csv file." << endl;
+		cout << "-mf file     : path+name of measure.csv file." << endl;
+		cout << "-wp 0/1      : write pairs, distances and probabilities. Default : " << group.writePairs << endl;
+
 		return( 1 );
 
 	}
@@ -96,7 +98,6 @@ int main( int argc, char *argv[] ) {
 		if ( strcmp( key, "-il" ) == 0 ) {
 			group.invertLandmarksCoordinates = atoi( value );
 		}
-
 		if ( strcmp( key, "-la" ) == 0) {
 			group.linearAlpha = atof( value );
 		}
@@ -135,6 +136,10 @@ int main( int argc, char *argv[] ) {
 
 		if ( strcmp( key, "-mf" ) == 0 ) {
 			group.outputFileName = value;
+		}
+
+		if ( strcmp( key, "-wp" ) == 0 ) {
+			group.writePairs = atoi( value );
 		}
 
 		argumentsIndex += 2;
