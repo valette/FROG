@@ -12,18 +12,23 @@ pairsFile = "pairs.bin"
 frogPath = normpath( join( dirname( __file__ ), "bin" ) )
 
 parser = argparse.ArgumentParser( description = 'Register a group of volumes', formatter_class=argparse.ArgumentDefaultsHelpFormatter )
-parser.add_argument( '-a', dest = 'averageImageSpacing', type = float, help = 'spacing for average image. Not computed if not specified')
-parser.add_argument( '-ao', dest = 'averageImageOnly', help = 'only compute average image, skip registration',  action="store_true" )
-parser.add_argument( '-i', dest = 'input', help = 'input list of files or directory', required = True )
-parser.add_argument( '-dl', dest = 'nDeformableLevels', help = 'number of deformable levels for registration', type = int )
-parser.add_argument( '-l', dest = 'limit', type = int, help = 'limit to number of input files' )
-parser.add_argument( '-landmarks', dest = 'landmarks', help = 'path to landmarks file' )
-parser.add_argument( '-o', dest = 'outputDirectory', help = 'outputDirectory' )
-parser.add_argument( '-p', dest = 'numberOfPoints', type = int, help = 'number of keypoints to extract with SURF3D', default = 20000 )
-parser.add_argument( '-s', dest = 'spacing', type = float, help = 'spacing for SURF3D', default = 0.75 )
-parser.add_argument( '-t', dest = 'threshold', type = float, help = 'detector threshold for SURF3D', default = 0 )
-parser.add_argument( '-ras', dest = 'flipToRAS', help = 'ensure RAS orientation for input images',  action="store_true" )
-
+regParse = parser.add_argument_group('General options')
+regParse.add_argument( 'input', help = 'input list of files or directory' )
+regParse.add_argument( '-limit', dest = 'limit', type = int, help = 'limit number of input files' )
+regParse.add_argument( '-o', dest = 'outputDirectory', help = 'outputDirectory' )
+frogParse = parser.add_argument_group('Registration options')
+frogParse.add_argument( '-dl', dest = 'deformableLevels', help = 'number of deformable levels', type = int )
+frogParse.add_argument( '-di', dest = 'deformableIterations', help = 'number of deformable iterations per level', type = int )
+frogParse.add_argument( '-li', dest = 'linearIterations', help = 'number of linear iterations', type = int )
+frogParse.add_argument( '-l', dest = 'landmarks', help = 'path to landmarks file' )
+SURFParser = parser.add_argument_group('SURF3D options')
+SURFParser.add_argument( '-p', dest = 'numberOfPoints', type = int, help = 'number of keypoints to extract', default = 20000 )
+SURFParser.add_argument( '-s', dest = 'spacing', type = float, help = 'spacing', default = 0.75 )
+SURFParser.add_argument( '-t', dest = 'threshold', type = float, help = 'detector threshold', default = 0 )
+SURFParser.add_argument( '-ras', dest = 'flipToRAS', help = 'ensure RAS orientation for input images',  action="store_true" )
+averageParse = parser.add_argument_group('Average image computing')
+averageParse.add_argument( '-a', dest = 'imageSpacing', type = float, help = 'spacing for average image. Not computed if not specified')
+averageParse.add_argument( '-ao', dest = 'averageImageOnly', help = 'only compute average image, skip registration',  action="store_true" )
 args = parser.parse_args()
 
 def separate():
@@ -71,12 +76,12 @@ def flipAndSaveToRAS( filename ):
         return join( cwd, "RAS.nii.gz" )
 
 def computeAverageImage( images ) :
-	if not args.averageImageSpacing : return
+	if not args.imageSpacing : return
 	separate()
 	print( "Compute average image" )
 	startTime = time.time()
 	dummyBin = join( frogPath, "DummyVolumeGenerator" )
-	execute( " ".join( [ dummyBin, "bbox.json", str( args.averageImageSpacing ) ] ) )
+	execute( " ".join( [ dummyBin, "bbox.json", str( args.imageSpacing ) ] ) )
 	transformedImages = []
 
 	for i, image in enumerate( images ) :
@@ -107,7 +112,6 @@ else:
 if ( args.limit ) : files = files[ :args.limit ]
 print( "There are " + str( len( files ) ) + " files to register : " )
 for f in files : print( f )
-
 
 if args.outputDirectory :
 	if not os.path.exists( args.outputDirectory ):
@@ -148,7 +152,9 @@ execute( matchCmd )
 #### register
 frogBin = join( frogPath, "frog" )
 frogArgs = [ frogBin, "pairs.bin" ]
-if args.nDeformableLevels : frogArgs.extend( [ "-dl", str( args.nDeformableLevels ) ] )
+if args.deformableLevels : frogArgs.extend( [ "-dl", str( args.deformableLevels ) ] )
+if args.linearIterations : frogArgs.extend( [ "-li", str( args.linearIterations ) ] )
+if args.deformableIterations : frogArgs.extend( [ "-di", str( args.deformableIterations ) ] )
 if args.landmarks : frogArgs.extend( [ "-l", args.landmarks ] )
 execute( " ".join( frogArgs ) )
 
