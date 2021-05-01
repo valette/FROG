@@ -534,7 +534,7 @@ void ImageGroup::setupLinearTransforms() {
 	float centers[ this->images.size() ][ 3 ];
 	float average[ 3 ] = { 0, 0, 0 };
 
-	for ( int i = this->numberOfFixedImages; i < this->images.size(); i++ ) {
+	for ( int i = 0; i < this->images.size(); i++ ) {
 
 		for ( int j = 0; j < 3; j++ ) {
 
@@ -549,7 +549,8 @@ void ImageGroup::setupLinearTransforms() {
 
 			float center = 0.5 * ( box[ 1 + 2 * j ] + box[ 2 * j ] );
 			centers[ i ][ j ] = center;
-			average[ j ] += center / ( float ) ( this->images.size() - this->numberOfFixedImages );
+			if ( i < this->numberOfFixedImages )
+				average[ j ] += center / ( float ) ( this->numberOfFixedImages );
 
 		}
 
