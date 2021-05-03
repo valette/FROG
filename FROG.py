@@ -3,6 +3,7 @@ import nibabel as nib
 import os
 from os import listdir
 from os.path import abspath, dirname, isdir, join, normpath
+import tempfile
 import time
 
 startTime = time.time()
@@ -21,11 +22,13 @@ frogParse.add_argument( '-dl', dest = 'deformableLevels', help = 'number of defo
 frogParse.add_argument( '-di', dest = 'deformableIterations', help = 'number of deformable iterations per level', type = int )
 frogParse.add_argument( '-li', dest = 'linearIterations', help = 'number of linear iterations', type = int )
 frogParse.add_argument( '-l', dest = 'landmarks', help = 'path to landmarks file' )
+frogParse.add_argument( '-wp', dest = 'writePairs', help = 'write list of pairs to file', action="store_true" )
 SURFParser = parser.add_argument_group('SURF3D options')
 SURFParser.add_argument( '-p', dest = 'numberOfPoints', type = int, help = 'number of keypoints to extract', default = 20000 )
 SURFParser.add_argument( '-s', dest = 'spacing', type = float, help = 'spacing', default = 0.75 )
 SURFParser.add_argument( '-t', dest = 'threshold', type = float, help = 'detector threshold', default = 0 )
 SURFParser.add_argument( '-ras', dest = 'flipToRAS', help = 'ensure RAS orientation for input images',  action="store_true" )
+SURFParser.add_argument( '-rast', dest = 'useTempd', help = 'use in-memory temporary directory when converting to RAS',  action="store_true" )
 averageParse = parser.add_argument_group('Average image computing')
 averageParse.add_argument( '-a', dest = 'imageSpacing', type = float, help = 'spacing for average image. Not computed if not specified')
 averageParse.add_argument( '-ao', dest = 'averageImageOnly', help = 'only compute average image, skip registration',  action="store_true" )
@@ -70,10 +73,10 @@ def flipAndSaveToRAS( filename ):
         flippedImage.header['qform_code'] = 1
         
         #Save the flipped image
-        nib.save(flippedImage, "RAS.nii.gz")
+        nib.save(flippedImage, RASFile )
         
         print("The new orientation is now : ", NewOrientation)
-        return join( cwd, "RAS.nii.gz" )
+        return RASFile
 
 def computeAverageImage( images ) :
 	if not args.imageSpacing : return
@@ -85,15 +88,16 @@ def computeAverageImage( images ) :
 	transformedImages = []
 
 	for i, image in enumerate( images ) :
+		separate()
 		transformBin = join( frogPath, "VolumeTransform" )
 		transformedImage = "transformed" + str( i ) + ".nii.gz"
+		if args.flipToRAS: image = flipAndSaveToRAS( image )
 		execute( " ".join( [ transformBin, image, "dummy.mhd", "-t transforms/" + str( i ) + ".json -o " + transformedImage ] ) )
 		transformedImages.append( transformedImage )
 
 	averageBin = join( frogPath, "AverageVolumes" )
 	execute( " ".join( [ averageBin, " ".join( transformedImages ) ] ) )
 	print( "Average image computed in " + str( round( time.time() - startTime ) ) + "s" )
-
 
 files = []
 
@@ -118,6 +122,14 @@ if args.outputDirectory :
 		print( "Output directory does not exist, create it : " + args.outputDirectory )
 		os.mkdir( args.outputDirectory )
 	os.chdir( args.outputDirectory )
+
+tempD = 0
+RASFile = 0
+if args.useTempd :
+	tempD = tempfile.TemporaryDirectory();
+	RASFile = join( tempD.name, "RAS.nii" )
+else:
+	RASFile = join( os.getcwd(), "RAS.nii.gz" )
 
 if args.averageImageOnly:
 	computeAverageImage( files )
@@ -155,6 +167,7 @@ frogArgs = [ frogBin, "pairs.bin" ]
 if args.deformableLevels : frogArgs.extend( [ "-dl", str( args.deformableLevels ) ] )
 if args.linearIterations : frogArgs.extend( [ "-li", str( args.linearIterations ) ] )
 if args.deformableIterations : frogArgs.extend( [ "-di", str( args.deformableIterations ) ] )
+if args.writePairs : frogArgs.append( "-wp 1" )
 if args.landmarks : frogArgs.extend( [ "-l", args.landmarks ] )
 execute( " ".join( frogArgs ) )
 
