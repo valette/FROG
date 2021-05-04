@@ -15,27 +15,42 @@ int main( int argc, char *argv[] ) {
 
 		cout << "Usage : frog inputPairs.bin [options]"<< endl;
 		cout << "Options : " << endl;
-		cout << "-da <value>  : set alpha for deformable registration. Default : " << group.deformableAlpha << endl;
+
+		cout << endl << "*Linear registration:" << endl;
 		cout << "-dlinear 0/1 : display linear parameters during registration. default : " << group.printLinear << endl;
-		cout << "-dstats 0/1  : display stats during registration. Default : " << group.printStats << endl;
-		cout << "-di number   : number of iterations for each deformable level. Default : " << group.deformableIterations << endl;
-		cout << "-dl number   : number of deformable levels. Default : " << group.deformableLevels << endl;
-		cout << "-emi number  : max number of iterations for EM weighting. Default : " << Stats::maxIterations << endl;
-		cout << "-fi number   : number of fixed images. Default : " << group.numberOfFixedImages << endl;
-		cout << "-fd path     : fixed images transforms directory." << endl;
-		cout << "-g spacing   : initial grid spacing for deformable. Default : " << group.initialGridSize << endl;
+		cout << "-la <value>  : set alpha. Default : " << group.linearAlpha << endl;
+		cout << "-li number   : number of iterations. Default : " << group.linearIterations << endl;
+		cout << "-s 0/1       : use scale. Default : " << group.useScale << endl;
+
+		cout << endl << "*Deformable registration:" << endl;
+		cout << "-da value    : set alpha. Default : " << group.deformableAlpha << endl;
+		cout << "-di number   : number of iterations for each level. Default : " << group.deformableIterations << endl;
+		cout << "-dl number   : number of levels. Default : " << group.deformableLevels << endl;
+		cout << "-g spacing   : initial grid spacing. Default : " << group.initialGridSize << endl;
 		cout << "-gd 0/1      : guaranteed diffeomorphism. Default : " << group.guaranteeDiffeomorphism << endl;
 		cout << "-gm ratio    : maximal displacement ratio to guarantee diffeomorphism. Default : " << group.maxDisplacementRatio << endl;
-		cout << "-il 0/1      : invert landmarks x and y coordinates. Default : " << group.invertLandmarksCoordinates << endl;
-		cout << "-la <value>  : set alpha for linear registration. Default : " << group.linearAlpha << endl;
-		cout << "-li number   : number of iterations for linear registration. Default : " << group.linearIterations << endl;
-		cout << "-nt <number> : set number of threads. Default : number of cores" << endl;
-		cout << "-s 0/1       : use scale for linear registration. Default : " << group.useScale << endl;
-		cout << "-se number   : stats epsilon. Default : " << Stats::epsilon << endl;
+
+		cout << endl << "*EM Weighting:" << endl;
+		cout << "-dstats 0/1  : display stats during registration. Default : " << group.printStats << endl;
+		cout << "-emi number  : max number of iterations for EM weighting. Default : " << Stats::maxIterations << endl;
 		cout << "-si number   : interval update for statistics. Default : " << group.statIntervalUpdate << endl;
+		cout << "-se number   : stats epsilon. Default : " << Stats::epsilon << endl;
 		cout << "-ss number   : stats maximal sample size. Default : " << Stats::maxSize << endl;
 		cout << "-t threshold : inlier probability threshold. Default : " << group.inlierThreshold << endl;
+
+		cout << endl << "*Registration with fixed images:" << endl;
+		cout << "-fi number   : number of fixed images. Default : " << group.numberOfFixedImages << endl;
+		cout << "-fd path     : fixed images transforms directory." << endl;
+		cout << "-r 0/1       : use RANSAC instead of linear registration. Default : " << group.useRANSAC << endl;
+		cout << "-ri number   : number of RANSAC iterations. Default : " << group.numberOfRANSACIterations << endl;
+		cout << "-rid value   : RANSAC inlier distance. Default : " << group.RANSACInlierDistance << endl;
+
+		cout << endl << "*Measure error with reference landmarks:" << endl;
 		cout << "-l path      : path containing reference landmarks." << endl;
+		cout << "-il 0/1      : invert landmarks x and y coordinates. Default : " << group.invertLandmarksCoordinates << endl;
+
+		cout << endl << "*Other parameters:" << endl;
+		cout << "-nt number : set number of threads. Default : number of cores" << endl;
 		cout << "-mf file     : path+name of measure.csv file." << endl;
 		cout << "-wp 0/1      : write pairs, distances and probabilities. Default : " << group.writePairs << endl;
 
@@ -108,6 +123,18 @@ int main( int argc, char *argv[] ) {
 
 		if ( strcmp( key, "-nt" ) == 0 ) {
 			omp_set_num_threads( atoi( value ) );
+		}
+
+		if ( strcmp( key, "-r" ) == 0 ) {
+			group.useRANSAC = atoi( value );
+		}
+
+		if ( strcmp( key, "-ri" ) == 0 ) {
+			group.numberOfRANSACIterations = atoi( value );
+		}
+
+		if ( strcmp( key, "-rid" ) == 0 ) {
+			group.RANSACInlierDistance = atof( value );
 		}
 
 		if ( strcmp( key, "-s" ) == 0 ) {

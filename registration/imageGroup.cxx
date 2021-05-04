@@ -15,7 +15,10 @@
 
 #include <vtkBSplineTransform.h>
 #include <vtkImageData.h>
+#include <vtkLandmarkTransform.h>
+#include <vtkMath.h>
 #include <vtkMatrixToLinearTransform.h>
+#include <vtkPoints.h>
 
 #include "../vtkOpenSURF3D/picojson.h"
 #include "../tools/transformIO.h"
@@ -37,91 +40,109 @@ void ImageGroup::run() {
 	// read transform if there are fixed images
 	if ( this->numberOfFixedImages ) readAndApplyFixedImagesTransforms();
 
-	// linear registration
-	cout << endl << "Linear registration" << endl;
 	this->setupStats();
 	this->setupLinearTransforms();
 	this->transformPoints();
 
-	for ( int iteration = 0; iteration < this->linearIterations; iteration++ ) {
+	if ( this->useRANSAC && this->numberOfFixedImages ) {
 
-		Measure measure;
-		cout << "Linear registration, iteration " << iteration + 1
-			<< "/" << this->linearIterations << endl;
+		for ( int i = this->numberOfFixedImages; i < this->images.size(); i++ )
+			this->RANSAC( i );
 
-		if ( !( iteration % this->statIntervalUpdate ) ) this->updateStats();
+		this->transformPoints();
+		this->updateStats();
 		if ( this->printStats ) displayStats();
-		measure.E = this->updateLinearTransforms();
 		if ( this->printLinear ) this->displayLinearTransforms();
-		this->transformPoints();
-		cout << "E = " << measure.E;
-		checkNaN( measure.E );
-		if ( !this->computeLandmarkDistances( measure ) ) cout << endl;
-		this->measures.push_back( measure );
 
-	}
+	} else {
 
-	this->transformPoints( true );
-	this->saveDistanceHistograms( "histograms_linear.csv" );
-	cout << endl << "Deformable registration" << endl;
-	vector< int > nGrids;
-	this->countInliers();
+		// linear registration
+		cout << endl << "Linear registration" << endl;
+		for ( int iteration = 0; iteration < this->linearIterations; iteration++ ) {
 
-	for ( int level = 0; level < this->deformableLevels; level++ ) {
-
-		cout << endl << "Level " << level + 1 << "/" << this->deformableLevels << endl;
-		this->setupDeformableTransforms( level );
-		this->transformPoints();
-		Measure measure;
-		int numberOfGrids = 1;
-
-		for ( int iteration = 0; iteration < this->deformableIterations; iteration++ ) {
-
-			cout << "Level " << level + 1 << "/" << this->deformableLevels
-				<< ", Iteration " << iteration + 1 <<"/"
-				<< this->deformableIterations << endl;
+			Measure measure;
+			cout << "Linear registration, iteration " << iteration + 1
+				<< "/" << this->linearIterations << endl;
 
 			if ( !( iteration % this->statIntervalUpdate ) ) this->updateStats();
-			if ( this->printStats ) this->displayStats();
-			measure.E = this->updateDeformableTransforms();
+			if ( this->printStats ) displayStats();
+			measure.E = this->updateLinearTransforms();
+			if ( this->printLinear ) this->displayLinearTransforms();
+			this->transformPoints();
 			cout << "E = " << measure.E;
 			checkNaN( measure.E );
-			if ( measure.E < 0 ) {
-
-				cout << " creating new grid" << endl;
-				numberOfGrids++;
-				iteration--;
-				this->transformPoints( true );
-				this->setupDeformableTransforms( level );
-				this->transformPoints();
-				continue;
-
-			}
-
-			this->transformPoints();
 			if ( !this->computeLandmarkDistances( measure ) ) cout << endl;
 			this->measures.push_back( measure );
 
 		}
 
+	}
+
+	this->transformPoints( true );
+	this->saveDistanceHistograms( "histograms_linear.csv" );
+
+	if ( this->deformableLevels ) {
+		cout << endl << "Deformable registration" << endl;
+		vector< int > nGrids;
 		this->countInliers();
-		cout << "Number of grids for this level : " << numberOfGrids << endl;
-		nGrids.push_back( numberOfGrids );
-		this->transformPoints( true );
 
+		for ( int level = 0; level < this->deformableLevels; level++ ) {
+
+			cout << endl << "Level " << level + 1 << "/" << this->deformableLevels << endl;
+			this->setupDeformableTransforms( level );
+			this->transformPoints();
+			Measure measure;
+			int numberOfGrids = 1;
+
+			for ( int iteration = 0; iteration < this->deformableIterations; iteration++ ) {
+
+				cout << "Level " << level + 1 << "/" << this->deformableLevels
+					<< ", Iteration " << iteration + 1 <<"/"
+					<< this->deformableIterations << endl;
+
+				if ( !( iteration % this->statIntervalUpdate ) ) this->updateStats();
+				if ( this->printStats ) this->displayStats();
+				measure.E = this->updateDeformableTransforms();
+				cout << "E = " << measure.E;
+				checkNaN( measure.E );
+				if ( measure.E < 0 ) {
+
+					cout << " creating new grid" << endl;
+					numberOfGrids++;
+					iteration--;
+					this->transformPoints( true );
+					this->setupDeformableTransforms( level );
+					this->transformPoints();
+					continue;
+
+				}
+
+				this->transformPoints();
+				if ( !this->computeLandmarkDistances( measure ) ) cout << endl;
+				this->measures.push_back( measure );
+
+			}
+
+			this->countInliers();
+			cout << "Number of grids for this level : " << numberOfGrids << endl;
+			nGrids.push_back( numberOfGrids );
+			this->transformPoints( true );
+
+		}
+
+		int totalNumberOfGrids = 0;
+		cout << "Grids per level : ";
+
+		for ( int i = 0; i < nGrids.size(); i++ ) {
+
+			totalNumberOfGrids +=nGrids[ i ];
+			cout << nGrids[ i ] << " ";
+
+		}
+
+		cout << endl << "Total number of grids : " << totalNumberOfGrids << endl;
 	}
 
-	int totalNumberOfGrids = 0;
-	cout << "Grids per level : ";
-
-	for ( int i = 0; i < nGrids.size(); i++ ) {
-
-		totalNumberOfGrids +=nGrids[ i ];
-		cout << nGrids[ i ] << " ";
-
-	}
-
-	cout << endl << "Total number of grids : " << totalNumberOfGrids << endl;
 	this->displayStats();
 	this->saveDistanceHistograms( "histograms.csv" );
 	this->saveMeasures( this->outputFileName );
@@ -528,6 +549,132 @@ void ImageGroup::displayLinearTransforms() {
 
 }
 
+void ImageGroup::RANSAC( int imageId ) {
+
+	chrono::time_point< chrono::system_clock> start, end;
+	start = chrono::system_clock::now();
+	cout << "RANSAC registration for image " << imageId << ": "<<std::flush;
+
+	Image *image = &this->images[ imageId ];
+	int nBatches = omp_get_num_procs();
+	int batchIterations = numberOfRANSACIterations / nBatches;
+	vector < RANSACResult > results;
+
+	#pragma omp parallel for
+	for ( int i = 0; i < nBatches; i++ ) {
+
+		RANSACResult result = this->RANSACBatch( imageId, batchIterations );
+		#pragma omp critical
+		results.push_back( result );
+
+	}
+
+	auto matrix = ( ( vtkMatrixToLinearTransform *) image->transform )->GetInput();
+
+	int maxNumberOfInliers = 0;
+	for ( auto res = results.begin(); res != results.end(); res++ ) {
+
+		int nInliers = res->first;
+
+		if ( nInliers > maxNumberOfInliers ) {
+
+			matrix->DeepCopy( res->second );
+			maxNumberOfInliers = nInliers;
+
+		}
+
+		res->second->Delete();
+
+	}
+
+	end = chrono::system_clock::now();
+	cout << maxNumberOfInliers << " inliers, computed in " << chrono::duration<float>(end - start).count() << "s" << endl;
+
+}
+
+ImageGroup::RANSACResult ImageGroup::RANSACBatch( int imageId, int nIterations ) {
+
+	int numberOfRansacPoints = 4;
+	vtkPoints *source = vtkPoints::New();
+	vtkPoints *target = vtkPoints::New();
+	source->SetDataTypeToFloat();
+	target->SetDataTypeToFloat();
+	vtkLandmarkTransform *trans = vtkLandmarkTransform::New();
+	trans->SetModeToAffine();
+	trans->SetSourceLandmarks( source );
+	trans->SetTargetLandmarks( target );
+	int maxNumberOfInliers = 0;
+	int maxDistance2 = pow( this->RANSACInlierDistance, 2 );
+	Image *image = &this->images[ imageId ];
+	vtkMatrix4x4 *matrix = vtkMatrix4x4::New();
+	auto matrix2 = trans->GetMatrix();
+
+	vector< Point > &pts = image->points;
+	int nPoints = pts.size();
+
+	for ( int i = 0; i < nIterations; i++ ) {
+
+		source->Reset();
+		target->Reset();
+
+		for ( int j = 0; j < numberOfRansacPoints; j++ ) {
+
+			while ( true ) {
+
+				int pt = rand() % nPoints;
+				Point &point = pts[ pt ];
+				auto &links = point.links;
+				auto size = links.size();
+				if ( size == 0 ) continue;
+				source->InsertNextPoint( point.xyz );
+				int linkId = rand() % size;
+				auto &link = links[ linkId ];
+				target->InsertNextPoint(
+					this->images[ link.image ].points[ link.point ].xyz );
+				break;
+
+			}
+
+		}
+
+		source->Modified();
+		target->Modified();
+		trans->Update();
+
+		int nInliers = 0;
+		float transformed[ 3 ];
+
+		for ( auto pointA = pts.begin(), end = pts.end(); pointA != end; pointA++ ) {
+
+			trans->TransformPoint( pointA->xyz, transformed );
+			for ( auto link = pointA->links.begin(), endL = pointA->links.end(); link != endL; link++ ) {
+
+				Image *image2 = &this->images[ link->image ];
+				Point *pointB = &image2->points[ link->point ];
+				float *pB = pointB->xyz2;
+				if ( vtkMath::Distance2BetweenPoints( transformed, pB ) < maxDistance2 )
+					nInliers++;
+
+			}
+
+		}
+
+		if ( maxNumberOfInliers < nInliers ) {
+
+			maxNumberOfInliers = nInliers;
+			matrix->DeepCopy( matrix2 );
+
+		}
+
+	}
+
+	source->Delete();
+	target->Delete();
+	trans->Delete();
+	return make_pair( maxNumberOfInliers, matrix );
+
+}
+
 void ImageGroup::setupLinearTransforms() {
 
 	float box[ 6 ];
@@ -549,8 +696,8 @@ void ImageGroup::setupLinearTransforms() {
 
 			float center = 0.5 * ( box[ 1 + 2 * j ] + box[ 2 * j ] );
 			centers[ i ][ j ] = center;
-			if ( i < this->numberOfFixedImages )
-				average[ j ] += center / ( float ) ( this->numberOfFixedImages );
+			if ( i < this->images.size() - this->numberOfFixedImages )
+				average[ j ] += center / ( float ) ( this->images.size() - this->numberOfFixedImages );
 
 		}
 

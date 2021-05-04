@@ -6,25 +6,6 @@
 #include "image.h"
 #include "stats.h"
 
-struct Landmark {
-
-	int image;
-	float xyz[ 3 ];
-
-};
-
-typedef std::vector < Landmark > Landmarks;
-
-class Measure {
-
-public:
-
-	float E, landmarkAv, landmarkMax, landmarkSTD;
-	Measure() : landmarkAv( 0 ), landmarkMax( 0 ), landmarkSTD( 0 ),
-		E ( 0 ) {};
-
-};
-
 class ImageGroup {
 
 public:
@@ -53,20 +34,58 @@ public:
 	void writeLinksDistances(); // write distances and probabilities between pairs to file
 	bool writePairs; // if true the pairs and their distances will be written to pairs.csv
 
-	int numberOfFixedImages;
+	int numberOfFixedImages; // number of already registered images
+	bool useRANSAC; // use RANSAC when registering with fixed images
+	int numberOfRANSACIterations; // number of RANSAC iterations
+	float RANSACInlierDistance; // maximum inlier distance for RANSAC
 	char *fixedTransformsDirectory;
 
 	void readLandmarks( const char *path );
 
-	ImageGroup() : linearIterations( 50 ), deformableIterations( 200 ),
-		linearAlpha( 0.5 ), deformableAlpha( 0.02 ),
-		deformableLevels( 3 ), fixedTransformsDirectory( 0 ),guaranteeDiffeomorphism( true ),
-		invertLandmarksCoordinates( true ), maxDisplacementRatio( 0.4 ),
-		numberOfFixedImages( 0 ), useScale( true ), statIntervalUpdate( 10 ),
-		initialGridSize( 100 ), boundingBoxMargin( 0.1 ), inlierThreshold( 0.5 ),
-		printStats( false ), printLinear( false ), writePairs( false ) {};
+	ImageGroup() {
+			boundingBoxMargin = 0.1;
+			deformableAlpha = 0.02;
+			deformableIterations = 200;
+			fixedTransformsDirectory = 0;
+			guaranteeDiffeomorphism = true;
+			invertLandmarksCoordinates = true;
+			initialGridSize = 100;
+			inlierThreshold = 0.5;
+			linearAlpha =  0.5;
+			linearIterations = 50;
+			maxDisplacementRatio = 0.4;
+			deformableLevels = 3;
+			numberOfFixedImages = 0;
+			numberOfRANSACIterations = 5000;
+			printLinear = false;
+			printStats = false;
+			RANSACInlierDistance = 50;
+			statIntervalUpdate = 10;
+			useRANSAC = true;
+			useScale = true;
+			writePairs = false;
+		};
 
 protected:
+
+	class Measure {
+
+	public:
+
+		float E, landmarkAv, landmarkMax, landmarkSTD;
+		Measure() : landmarkAv( 0 ), landmarkMax( 0 ), landmarkSTD( 0 ),
+			E ( 0 ) {};
+
+	};
+
+
+	struct Landmark {
+
+		int image;
+		float xyz[ 3 ];
+
+	};
+	typedef std::vector < Landmark > Landmarks;
 
 	std::vector < Image > images;
 	std::vector < Measure > measures;
@@ -75,6 +94,10 @@ protected:
 
 	void setupDeformableTransforms( int level );
 	void setupLinearTransforms();
+
+	typedef pair< int, vtkMatrix4x4* > RANSACResult;
+	void RANSAC( int image );
+	RANSACResult RANSACBatch( int image, int nIterations );
 
 	void transformPoints( bool apply = false );
 
