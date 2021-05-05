@@ -569,9 +569,10 @@ void ImageGroup::RANSAC( int imageId ) {
 
 	}
 
-	auto matrix = ( ( vtkMatrixToLinearTransform *) image->transform )->GetInput();
-
+	vtkMatrixToLinearTransform *transform = ( vtkMatrixToLinearTransform *) image->transform;
+	auto matrix = transform->GetInput();
 	int maxNumberOfInliers = 0;
+
 	for ( auto res = results.begin(); res != results.end(); res++ ) {
 
 		int nInliers = res->first;
@@ -587,6 +588,43 @@ void ImageGroup::RANSAC( int imageId ) {
 
 	}
 
+	float transformed[ 3 ];
+	auto &pts = image->points;
+	vtkPoints *source = vtkPoints::New();
+	vtkPoints *target = vtkPoints::New();
+	source->SetDataTypeToFloat();
+	target->SetDataTypeToFloat();
+	vtkLandmarkTransform *trans = vtkLandmarkTransform::New();
+	trans->SetModeToAffine();
+	trans->SetSourceLandmarks( source );
+	trans->SetTargetLandmarks( target );
+	float maxDistance2 = pow( this->RANSACInlierDistance, 2 );
+
+	for ( auto pointA = pts.begin(), end = pts.end(); pointA != end; pointA++ ) {
+
+		transform->TransformPoint( pointA->xyz, transformed );
+
+		for ( auto link = pointA->links.begin(), endL = pointA->links.end(); link != endL; link++ ) {
+
+			Image *image2 = &this->images[ link->image ];
+			Point *pointB = &image2->points[ link->point ];
+			float *pB = pointB->xyz2;
+			if ( vtkMath::Distance2BetweenPoints( transformed, pB ) < maxDistance2 ) {
+				source->InsertNextPoint( pointA->xyz );
+				target->InsertNextPoint( pB );
+			}
+
+		}
+
+	}
+
+	source->Modified();
+	target->Modified();
+	trans->Update();
+	matrix->DeepCopy( trans->GetMatrix() );
+	trans->Delete();
+	source->Delete();
+	target->Delete();
 	end = chrono::system_clock::now();
 	cout << maxNumberOfInliers << " inliers, computed in " << chrono::duration<float>(end - start).count() << "s" << endl;
 
@@ -604,12 +642,12 @@ ImageGroup::RANSACResult ImageGroup::RANSACBatch( int imageId, int nIterations )
 	trans->SetSourceLandmarks( source );
 	trans->SetTargetLandmarks( target );
 	int maxNumberOfInliers = 0;
-	int maxDistance2 = pow( this->RANSACInlierDistance, 2 );
+	float maxDistance2 = pow( this->RANSACInlierDistance, 2 );
 	Image *image = &this->images[ imageId ];
 	vtkMatrix4x4 *matrix = vtkMatrix4x4::New();
 	auto matrix2 = trans->GetMatrix();
 
-	vector< Point > &pts = image->points;
+	auto &pts = image->points;
 	int nPoints = pts.size();
 
 	for ( int i = 0; i < nIterations; i++ ) {
@@ -647,6 +685,7 @@ ImageGroup::RANSACResult ImageGroup::RANSACBatch( int imageId, int nIterations )
 		for ( auto pointA = pts.begin(), end = pts.end(); pointA != end; pointA++ ) {
 
 			trans->TransformPoint( pointA->xyz, transformed );
+
 			for ( auto link = pointA->links.begin(), endL = pointA->links.end(); link != endL; link++ ) {
 
 				Image *image2 = &this->images[ link->image ];
