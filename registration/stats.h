@@ -86,6 +86,7 @@ public:
 	inline float getInlierProbability( const float &d ) {
 
 		const float eps = 1e-10;
+		if ( d < 0.1 ) return 1; // fix for very small distances
 		float x1 = ratio * chipdf( d / ( c1 + eps ) ) / ( c1 + eps );
 		float x2 = ( 1.0 - ratio ) * chipdf( d / ( c2 + eps ) )/ ( c2 + eps);
 		return x1 / ( x1 + x2 + eps );
