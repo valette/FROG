@@ -177,6 +177,7 @@ void ImageGroup::setupDeformableTransforms( int level ) {
 
 		length[ k ] = box[ 1 + 2 * k ] - box[ 2 * k ];
 		dims[ k ] = round( length[ k ] / size );
+		if ( dims[ k ] < 1 ) dims[ k ] = 1;
 		spacing[ k ] = length[ k ] / dims[ k ];
 		origin[ k ] = box[ 2 * k ] - spacing[ k ];
 		dims[ k ] += 3;
