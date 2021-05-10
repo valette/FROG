@@ -20,10 +20,12 @@ regParse.add_argument( '-o', dest = 'outputDirectory', help = 'outputDirectory' 
 frogParse = parser.add_argument_group('Registration options')
 frogParse.add_argument( '-dl', dest = 'deformableLevels', help = 'number of deformable levels', type = int )
 frogParse.add_argument( '-di', dest = 'deformableIterations', help = 'number of deformable iterations per level', type = int )
+frogParse.add_argument( '-g', dest = 'gridSpacing', type = float, help = 'initial grid spacing' )
 frogParse.add_argument( '-li', dest = 'linearIterations', help = 'number of linear iterations', type = int )
 frogParse.add_argument( '-l', dest = 'landmarks', help = 'path to landmarks file' )
 frogParse.add_argument( '-wp', dest = 'writePairs', help = 'write list of pairs to file', action="store_true" )
 SURFParser = parser.add_argument_group('SURF3D options')
+SURFParser.add_argument( '-m', dest = 'masks', help = 'path to masks' )
 SURFParser.add_argument( '-p', dest = 'numberOfPoints', type = int, help = 'number of keypoints to extract', default = 20000 )
 SURFParser.add_argument( '-s', dest = 'spacing', type = float, help = 'spacing', default = 0.75 )
 SURFParser.add_argument( '-t', dest = 'threshold', type = float, help = 'detector threshold', default = 0 )
@@ -135,10 +137,20 @@ if args.averageImageOnly:
 	computeAverageImage( files )
 	exit( 0 )
 
+maskFiles = []
+
+if args.masks:
+	for f in sorted( listdir( args.masks ) ) :
+		for ext in [ ".nii.gz", ".mhd", ".csv.gz" ] :
+			if f.endswith( ext ) :
+				maskFiles.append( abspath( join( args.masks, f ) ) )
+				print (f )
+
+
 #### compute input volume keypoints if needed
 keypointFiles = []
 
-for f in files :
+for index, f in enumerate( files ):
 	if f.endswith( ".csv.gz" ) :
 		keypointFiles.append( f )
 		continue
@@ -148,7 +160,9 @@ for f in files :
 	if args.flipToRAS: f = flipAndSaveToRAS( f )
 	pointsFile = "points" + str( len ( keypointFiles ) )
 	surfBin = join( frogPath, "surf3d" )
-	execute( surfBin + " " + f + " -s " + str( args.spacing ) + " -t " + str( args.threshold ) + " -n " + str( args.numberOfPoints ) + " -o " + pointsFile )
+	surfArgs = [ surfBin, f, "-s", str( args.spacing ), "-t", str( args.threshold ), "-n", str( args.numberOfPoints ), "-o", pointsFile ]
+	if len( maskFiles ) : surfArgs.extend( [ "-m", maskFiles[ index ] ] )
+	execute( " ".join( surfArgs ) )
 	keypointFiles.append( join( os.getcwd(),  pointsFile + ".csv.gz") )
 
 separate()
@@ -169,6 +183,7 @@ if args.linearIterations : frogArgs.extend( [ "-li", str( args.linearIterations 
 if args.deformableIterations : frogArgs.extend( [ "-di", str( args.deformableIterations ) ] )
 if args.writePairs : frogArgs.append( "-wp 1" )
 if args.landmarks : frogArgs.extend( [ "-l", args.landmarks ] )
+if args.gridSpacing : frogArgs.extend( [ "-g", str( args.gridSpacing ) ] )
 execute( " ".join( frogArgs ) )
 
 separate()
