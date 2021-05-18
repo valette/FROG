@@ -76,7 +76,7 @@ def flipAndSaveToRAS( filename ):
         
         #Save the flipped image
         nib.save(flippedImage, RASFile )
-        
+
         print("The new orientation is now : ", NewOrientation)
         return RASFile
 
@@ -101,20 +101,26 @@ def computeAverageImage( images ) :
 	execute( " ".join( [ averageBin, " ".join( transformedImages ) ] ) )
 	print( "Average image computed in " + str( round( time.time() - startTime ) ) + "s" )
 
-files = []
+def getFileList( inputPath ) :
 
-if isdir( args.input ) :
-	for f in sorted( listdir( args.input ) ) :
-		for ext in [ ".nii.gz", ".mhd", ".csv.gz" ] :
-			if f.endswith( ext ) : files.append( abspath( join( args.input, f ) ) )
-else:
-	f = open( args.input,mode = 'r' )
-	for element in f.read().split( "\n" ) :
-		for ext in [ ".nii.gz", ".mhd", ".csv.gz" ] :
-			if element.endswith( ext ) : files.append( element )
-		
-	f.close()
+	files = []
 
+	if isdir( inputPath ) :
+		for f in sorted( listdir( inputPath ) ) :
+			for ext in [ ".nii.gz", ".mhd", ".csv.gz" ] :
+				if f.endswith( ext ) : files.append( abspath( join( inputPath, f ) ) )
+	else:
+		f = open( inputPath, mode = 'r' )
+		for element in f.read().split( "\n" ) :
+			for ext in [ ".nii.gz", ".mhd", ".csv.gz" ] :
+				if element.endswith( ext ) : files.append( element )
+
+		f.close()
+
+	return files
+
+
+files = getFileList( args.input )
 if ( args.limit ) : files = files[ :args.limit ]
 print( "There are " + str( len( files ) ) + " files to register : " )
 for f in files : print( f )
@@ -138,13 +144,7 @@ if args.averageImageOnly:
 	exit( 0 )
 
 maskFiles = []
-
-if args.masks:
-	for f in sorted( listdir( args.masks ) ) :
-		for ext in [ ".nii.gz", ".mhd", ".csv.gz" ] :
-			if f.endswith( ext ) :
-				maskFiles.append( abspath( join( args.masks, f ) ) )
-				print (f )
+if args.masks: maskFiles = getFileList( args.masks )
 
 
 #### compute input volume keypoints if needed
