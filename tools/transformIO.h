@@ -5,6 +5,7 @@
 #include <limits>
 
 #include <vtkGeneralTransform.h>
+#include <vtkImageData.h>
 #include <vtkBSplineTransform.h>
 #include <vtkMatrixToLinearTransform.h>
 
