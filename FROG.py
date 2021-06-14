@@ -23,7 +23,11 @@ frogParse.add_argument( '-di', dest = 'deformableIterations', help = 'number of 
 frogParse.add_argument( '-g', dest = 'gridSpacing', type = float, help = 'initial grid spacing' )
 frogParse.add_argument( '-li', dest = 'linearIterations', help = 'number of linear iterations', type = int )
 frogParse.add_argument( '-l', dest = 'landmarks', help = 'path to landmarks file' )
+frogParse.add_argument( '-il', dest = 'invertLandmarks', help = 'revert landmarks coordinates', type = int, default = 1 )
 frogParse.add_argument( '-wp', dest = 'writePairs', help = 'write list of pairs to file', action="store_true" )
+matchParser = parser.add_argument_group('Match options')
+matchParser.add_argument( '-md', dest = 'matchDistance', type = float, default = 10000000000, help = 'maximum descriptor distance' )
+
 SURFParser = parser.add_argument_group('SURF3D options')
 SURFParser.add_argument( '-m', dest = 'masks', help = 'path to masks' )
 SURFParser.add_argument( '-p', dest = 'numberOfPoints', type = int, help = 'number of keypoints to extract', default = 20000 )
@@ -172,7 +176,7 @@ volumes = open( volumesList, "w" )
 volumes.write( "\n".join( keypointFiles ) )
 volumes.close()
 matchBin = join( frogPath, "match" )
-matchCmd = " ".join( [ matchBin, volumesList, "-o", pairsFile, "-d 1" ] )
+matchCmd = " ".join( [ matchBin, volumesList, "-o", pairsFile, "-d", str( args.matchDistance ), "-np", str( args.numberOfPoints ) ] )
 execute( matchCmd )
 
 #### register
@@ -184,6 +188,7 @@ if args.deformableIterations : frogArgs.extend( [ "-di", str( args.deformableIte
 if args.writePairs : frogArgs.append( "-wp 1" )
 if args.landmarks : frogArgs.extend( [ "-l", args.landmarks ] )
 if args.gridSpacing : frogArgs.extend( [ "-g", str( args.gridSpacing ) ] )
+if args.invertLandmarks : frogArgs.extend( [ "-il", str( args.invertLandmarks ) ] )
 execute( " ".join( frogArgs ) )
 
 separate()
