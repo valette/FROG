@@ -5,6 +5,7 @@
 #include <numeric>
 #include <omp.h>
 #include <sstream>
+#include <random>
 #include <stdio.h>
 #include <stdlib.h>
 #include <vector>
@@ -564,7 +565,7 @@ void ImageGroup::RANSAC( int imageId ) {
 	#pragma omp parallel for
 	for ( int i = 0; i < nBatches; i++ ) {
 
-		RANSACResult result = this->RANSACBatch( imageId, batchIterations );
+		RANSACResult result = this->RANSACBatch( imageId, batchIterations, i );
 		#pragma omp critical
 		results.push_back( result );
 
@@ -596,7 +597,7 @@ void ImageGroup::RANSAC( int imageId ) {
 	source->SetDataTypeToFloat();
 	target->SetDataTypeToFloat();
 	vtkLandmarkTransform *trans = vtkLandmarkTransform::New();
-	trans->SetModeToAffine();
+	trans->SetModeToSimilarity();
 	trans->SetSourceLandmarks( source );
 	trans->SetTargetLandmarks( target );
 	float maxDistance2 = pow( this->RANSACInlierDistance, 2 );
@@ -631,7 +632,7 @@ void ImageGroup::RANSAC( int imageId ) {
 
 }
 
-ImageGroup::RANSACResult ImageGroup::RANSACBatch( int imageId, int nIterations ) {
+ImageGroup::RANSACResult ImageGroup::RANSACBatch( int imageId, int nIterations, int batch ) {
 
 	int numberOfRansacPoints = 4;
 	vtkPoints *source = vtkPoints::New();
@@ -639,7 +640,7 @@ ImageGroup::RANSACResult ImageGroup::RANSACBatch( int imageId, int nIterations )
 	source->SetDataTypeToFloat();
 	target->SetDataTypeToFloat();
 	vtkLandmarkTransform *trans = vtkLandmarkTransform::New();
-	trans->SetModeToAffine();
+	trans->SetModeToSimilarity();
 	trans->SetSourceLandmarks( source );
 	trans->SetTargetLandmarks( target );
 	int maxNumberOfInliers = 0;
@@ -650,6 +651,7 @@ ImageGroup::RANSACResult ImageGroup::RANSACBatch( int imageId, int nIterations )
 
 	auto &pts = image->points;
 	int nPoints = pts.size();
+	mt19937 rng( batch * 1000 );
 
 	for ( int i = 0; i < nIterations; i++ ) {
 
@@ -660,13 +662,13 @@ ImageGroup::RANSACResult ImageGroup::RANSACBatch( int imageId, int nIterations )
 
 			while ( true ) {
 
-				int pt = rand() % nPoints;
+				int pt = rng() % nPoints;
 				Point &point = pts[ pt ];
 				auto &links = point.links;
 				auto size = links.size();
 				if ( size == 0 ) continue;
 				source->InsertNextPoint( point.xyz );
-				int linkId = rand() % size;
+				int linkId = rng() % size;
 				auto &link = links[ linkId ];
 				target->InsertNextPoint(
 					this->images[ link.image ].points[ link.point ].xyz );

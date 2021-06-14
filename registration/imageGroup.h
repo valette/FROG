@@ -97,7 +97,7 @@ protected:
 
 	typedef pair< int, vtkMatrix4x4* > RANSACResult;
 	void RANSAC( int image );
-	RANSACResult RANSACBatch( int image, int nIterations );
+	RANSACResult RANSACBatch( int image, int nIterations, int batch );
 
 	void transformPoints( bool apply = false );
 
