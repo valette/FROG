@@ -10,6 +10,7 @@ SET(TOOL_FILES
 AverageVolumes
 CheckDiffeomorphism
 DummyVolumeGenerator
+MeshTransform
 PointsTransform
 VolumeTransform
 )

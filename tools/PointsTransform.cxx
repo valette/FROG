@@ -1,6 +1,6 @@
 /*=========================================================================
 
-Program:   PointsTransform : Transform a volume
+Program:   PointsTransform : Transform a point
 Module:    FROG
 Language:  C++
 Date:      2021/05
