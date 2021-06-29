@@ -20,6 +20,7 @@ parser.add_argument( '-p', dest = 'numberOfPoints', type = int, help = 'number o
 parser.add_argument( '-n', dest = 'numberOfReferences', type = int, help = 'number of reference volumes to register against' )
 parser.add_argument( '-s', dest = 'spacing', type = float, help = 'spacing for SURF3D', default = 0.75 )
 parser.add_argument( '-t', dest = 'threshold', type = float, help = 'detector threshold for SURF3D', default = 0 )
+parser.add_argument( '-vt', dest = 'volumeThreshold', type = float, help = 'volume Threshold' )
 args = parser.parse_args()
 
 def separate():
@@ -60,9 +61,14 @@ def flipAndSaveToRAS( filename ):
         
         #Set Qcode to 1 that the Qform matrix can be used into the further processing
         flippedImage.header['qform_code'] = 1
-        
+
+        img_data = flippedImage.get_fdata()
+		if args.volumeThreshold : img_data[ img_data < args.volumeThreshold ] = 0
+        img_conv = nib.Nifti1Image(img_data.astype(flippedImage.header.get_data_dtype()), flippedImage.affine, flippedImage.header)
+        nib.save( img_conv, "RAS.nii.gz" )
+
         #Save the flipped image
-        nib.save(flippedImage, "RAS.nii.gz")
+#        nib.save(flippedImage, "RAS.nii.gz")
         
         print("The new orientation is now : ", NewOrientation)
         return join( cwd, "RAS.nii.gz" )

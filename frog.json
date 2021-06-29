@@ -173,6 +173,43 @@
 			"executable" : "bin/match"
 
 		},
+		"MeshTransform" : {
+
+			"parameters" : [
+				{
+					"name" : "source",
+					"type" : "file",
+					"required" : true
+				},
+				{
+					"name" : "transform",
+					"prefix" : "-t ",
+					"type" : "file"
+				},
+				{
+					"name" : "inverseTransform",
+					"prefix" : "-ti ",
+					"type" : "file"
+				}
+			],
+			"executable" : "bin/MeshTransform"
+		},
+		"trimTransform" : {
+
+			"parameters" : [
+				{
+					"name" : "transform",
+					"type" : "file",
+					"required" : true
+				},
+				{
+					"name" : "numberOfLevels",
+					"type" : "int"
+				}
+			],
+			"executable" : "tools/trimTransform.py",
+			"engine" : "python"
+		},
 		"VolumeTransform" : {
 
 			"parameters" : [
