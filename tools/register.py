@@ -63,7 +63,7 @@ def flipAndSaveToRAS( filename ):
         flippedImage.header['qform_code'] = 1
 
         img_data = flippedImage.get_fdata()
-		if args.volumeThreshold : img_data[ img_data < args.volumeThreshold ] = 0
+        if args.volumeThreshold : img_data[ img_data < args.volumeThreshold ] = 0
         img_conv = nib.Nifti1Image(img_data.astype(flippedImage.header.get_data_dtype()), flippedImage.affine, flippedImage.header)
         nib.save( img_conv, "RAS.nii.gz" )
 
