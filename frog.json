@@ -1,6 +1,21 @@
 {
 
 	"actions": {
+		"dummyVolumeGenerator" : {
+			"parameters" : [
+				{
+					"name" : "boundingBox",
+					"type" : "file",
+					"required" : true
+				},
+				{
+					"name" : "spacing",
+					"type" : "float",
+					"required" : true
+				}
+			],
+			"executable" : "bin/DummyVolumeGenerator"
+		},
 		"labelContour" : {
 			"parameters" : [
 				{
