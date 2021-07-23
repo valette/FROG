@@ -18,7 +18,7 @@ int main( int argc, char *argv[] ) {
 	char *file = argv[ 1 ];
 	double spacing = atof( argv[ 2 ] );
 
-	ifstream bboxFile( file );
+	std::ifstream bboxFile( file );
     std::string str, str2;
 
 	while( bboxFile ){
