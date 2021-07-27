@@ -150,6 +150,7 @@ void ImageGroup::run() {
 	this->saveTransforms();
 	this->saveBoundingBox();
 	this->saveLandmarkDistances();
+	this->saveTransformedLandmarks();
 	if ( this->writePairs ) this->writeLinksDistances();
 
 }
@@ -1217,6 +1218,47 @@ bool ImageGroup::computeLandmarkDistances( Measure &measure ) {
 	measure.landmarkAv = mean;
 	measure.landmarkMax = *max;
 	measure.landmarkSTD = stdev;
+	return true;
+
+}
+
+bool ImageGroup::saveTransformedLandmarks() {
+
+	if ( !this->landmarks.size() ) return false;
+	picojson::object transformedLandmarks;
+
+	for ( auto iter = this->landmarks.begin(); iter != landmarks.end(); iter++) {
+
+		picojson::array landmarksArray;
+		auto &arr = *iter->second;
+
+		for ( auto landmark = arr.begin(); landmark != arr.end(); landmark++) {
+
+			if ( landmark->image > ( this->images.size() - 1 ) ) continue;
+			float xyz2[ 3 ];
+			this->images[ landmark->image ].allTransforms
+				->TransformPoint( landmark->xyz, xyz2 );
+
+			picojson::object land;
+			land[ "image" ] = picojson::value( ( double ) landmark->image );
+			picojson::array coords;
+
+			for ( int i = 0; i < 3; i++ )
+				coords.push_back( picojson::value( xyz2[ i ] ) );
+
+			land[ "xyz" ] = picojson::value( coords );
+			landmarksArray.push_back( picojson::value( land ) );
+
+		}
+
+		transformedLandmarks[ iter->first ] = picojson::value( landmarksArray );
+
+	}
+
+	std::fstream fs;
+	fs.open( "transformedLandmarks.json", fstream::out | fstream::trunc );
+	fs << picojson::value( transformedLandmarks ).serialize();
+	fs.close();
 	return true;
 
 }
