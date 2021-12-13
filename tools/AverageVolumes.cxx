@@ -1,3 +1,4 @@
+#include <cmath>
 #include <vtkImageCast.h>
 #include <vtkImageData.h>
 #include <vtkNIFTIImageWriter.h>
