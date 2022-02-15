@@ -1,9 +1,9 @@
 
-find_package(OpenCV REQUIRED)
-find_package(VTK REQUIRED)
+# find_package(OpenCV REQUIRED)
+# find_package(VTK REQUIRED)
 find_package( Boost COMPONENTS filesystem REQUIRED  iostreams REQUIRED )
 
-include ("${VTK_USE_FILE}")
+# include ("${VTK_USE_FILE}")
 
 find_package(OpenMP)
 

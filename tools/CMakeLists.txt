@@ -1,6 +1,6 @@
 
-find_package(VTK REQUIRED)
-include ("${VTK_USE_FILE}")
+# find_package(VTK REQUIRED)
+# include ("${VTK_USE_FILE}")
 
 find_package( OpenMP REQUIRED )
 set( CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}" )
