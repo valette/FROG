@@ -29,8 +29,7 @@ This code is distributed under the CeCILL-B license (BSD-compatible)
 ###  Simple compilation HowTo under Linux ###
 	git clone https://github.com/valette/FROG.git
 	cd FROG
-	git submodule init
-	git submodule update
+	git clone --recursive git@github.com:valette/FROG.git FROG
 	cmake . -DCMAKE_BUILD_TYPE=Release
 	make
 
