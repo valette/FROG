@@ -30,6 +30,8 @@ matchParser.add_argument( '-md', dest = 'matchDistance', type = float, default =
 
 SURFParser = parser.add_argument_group('SURF3D options')
 SURFParser.add_argument( '-m', dest = 'masks', help = 'path to masks' )
+SURFParser.add_argument( '-cmin', type = float, help = 'min clamp image values' )
+SURFParser.add_argument( '-cmax', type = float, help = 'max clamp image values' )
 SURFParser.add_argument( '-p', dest = 'numberOfPoints', type = int, help = 'number of keypoints to extract', default = 20000 )
 SURFParser.add_argument( '-s', dest = 'spacing', type = float, help = 'spacing', default = 0.75 )
 SURFParser.add_argument( '-t', dest = 'threshold', type = float, help = 'detector threshold', default = 0 )
@@ -166,6 +168,8 @@ for index, f in enumerate( files ):
 	surfBin = join( frogPath, "surf3d" )
 	surfArgs = [ surfBin, f, "-s", str( args.spacing ), "-t", str( args.threshold ), "-n", str( args.numberOfPoints ), "-o", pointsFile ]
 	if len( maskFiles ) : surfArgs.extend( [ "-m", maskFiles[ index ] ] )
+	if args.cmin != None : surfArgs.extend( [ "-cmin", str( args.cmin ) ] )
+	if args.cmax != None : surfArgs.extend( [ "-cmax", str( args.cmax ) ] )
 	execute( " ".join( surfArgs ) )
 	keypointFiles.append( join( os.getcwd(),  pointsFile + ".csv.gz") )
 
