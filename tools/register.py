@@ -66,7 +66,7 @@ def flipAndSaveToRAS( filename ):
         if args.volumeThreshold : img_data[ img_data < args.volumeThreshold ] = 0
         img_conv = nib.Nifti1Image(img_data.astype(flippedImage.header.get_data_dtype()), flippedImage.affine, flippedImage.header)
         nib.save( img_conv, "RAS.nii.gz" )
-
+        imageObj = img_conv = img_data = flippedImage = imageObj = None
         #Save the flipped image
 #        nib.save(flippedImage, "RAS.nii.gz")
         
