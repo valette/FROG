@@ -21,6 +21,8 @@ parser.add_argument( '-n', dest = 'numberOfReferences', type = int, help = 'numb
 parser.add_argument( '-s', dest = 'spacing', type = float, help = 'spacing for SURF3D', default = 0.75 )
 parser.add_argument( '-t', dest = 'threshold', type = float, help = 'detector threshold for SURF3D', default = 0 )
 parser.add_argument( '-vt', dest = 'volumeThreshold', type = float, help = 'volume Threshold' )
+parser.add_argument( '-cmin', type = float, help = 'min clamp image values' )
+parser.add_argument( '-cmax', type = float, help = 'max clamp image values' )
 args = parser.parse_args()
 
 def separate():
@@ -94,7 +96,10 @@ inputPoints = "";
 if not args.inputVolume.endswith( '.csv.gz' ) :
 	inputVolume = flipAndSaveToRAS( args.inputVolume )
 	surfBin = join( frogPath, "surf3d" )
-	execute( surfBin + " " + inputVolume + " -s " + str( args.spacing ) + " -t " + str( args.threshold ) + " -n " + str( args.numberOfPoints ) )
+	surfArgs = [ surfBin, f, "-s", str( args.spacing ), "-t", str( args.threshold ), "-n", str( args.numberOfPoints )]
+	if args.cmin != None : surfArgs.extend( [ "-cmin", str( args.cmin ) ] )
+	if args.cmax != None : surfArgs.extend( [ "-cmax", str( args.cmax ) ] )
+	execute( " ".join( surfArgs ) )
 	inputPoints = join( cwd, "points.csv.gz" )
 else:
 	print ( "Input is a .csv.gz file, no need for extraction" )
