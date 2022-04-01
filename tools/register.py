@@ -96,7 +96,7 @@ inputPoints = "";
 if not args.inputVolume.endswith( '.csv.gz' ) :
 	inputVolume = flipAndSaveToRAS( args.inputVolume )
 	surfBin = join( frogPath, "surf3d" )
-	surfArgs = [ surfBin, f, "-s", str( args.spacing ), "-t", str( args.threshold ), "-n", str( args.numberOfPoints )]
+	surfArgs = [ surfBin, inputVolume, "-s", str( args.spacing ), "-t", str( args.threshold ), "-n", str( args.numberOfPoints )]
 	if args.cmin != None : surfArgs.extend( [ "-cmin", str( args.cmin ) ] )
 	if args.cmax != None : surfArgs.extend( [ "-cmax", str( args.cmax ) ] )
 	execute( " ".join( surfArgs ) )
