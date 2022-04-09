@@ -43,6 +43,7 @@ int main( int argc, char *argv[] ) {
 		cout << "-fd path     : fixed images transforms directory." << endl;
 		cout << "-r 0/1       : use RANSAC instead of linear registration. Default : " << group.useRANSAC << endl;
 		cout << "-ri number   : number of RANSAC iterations. Default : " << group.numberOfRANSACIterations << endl;
+		cout << "-rs maxScale : maximum allowed scale for RANSAC iterations. Default : " << group.RANSACMaxScale << endl;
 		cout << "-rid value   : RANSAC inlier distance. Default : " << group.RANSACInlierDistance << endl;
 
 		cout << endl << "*Measure error with reference landmarks:" << endl;
@@ -131,6 +132,10 @@ int main( int argc, char *argv[] ) {
 
 		if ( strcmp( key, "-ri" ) == 0 ) {
 			group.numberOfRANSACIterations = atoi( value );
+		}
+
+		if ( strcmp( key, "-rs" ) == 0 ) {
+			group.RANSACMaxScale = atof( value );
 		}
 
 		if ( strcmp( key, "-rid" ) == 0 ) {

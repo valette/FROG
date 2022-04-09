@@ -38,6 +38,7 @@ public:
 	bool useRANSAC; // use RANSAC when registering with fixed images
 	int numberOfRANSACIterations; // number of RANSAC iterations
 	float RANSACInlierDistance; // maximum inlier distance for RANSAC
+	float RANSACMaxScale; // maximum allowed scale for RANSAC
 	char *fixedTransformsDirectory;
 
 	void readLandmarks( const char *path );
@@ -60,6 +61,7 @@ public:
 			printLinear = false;
 			printStats = false;
 			RANSACInlierDistance = 50;
+			RANSACMaxScale = 10;
 			statIntervalUpdate = 10;
 			useRANSAC = true;
 			useScale = true;

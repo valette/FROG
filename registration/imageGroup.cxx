@@ -702,6 +702,9 @@ ImageGroup::RANSACResult ImageGroup::RANSACBatch( int imageId, int nIterations, 
 
 		}
 
+		float determinant = fabs( matrix2->Determinant() );
+		if ( ( determinant > this->RANSACMaxScale ) || (  determinant < 1.0 / this->RANSACMaxScale ) ) continue;
+
 		if ( maxNumberOfInliers < nInliers ) {
 
 			maxNumberOfInliers = nInliers;
