@@ -323,6 +323,10 @@ int main( int argc, char *argv[] ) {
 	float sp = 0; //Seuil pour les points d'interets
 	int np = 1000000; //nb point d'interet max
 	int nt = std::thread::hardware_concurrency();
+	if ( argc < 2 ) {
+		std::cout<< "Usage : match pointFiles.txt [options] " << std::endl;
+		return 1;
+	}
 	fs::path full_path = fs::system_complete( fs::path( argv[1] ) );
 	float dist = 0.22;
 	float dist2second = 1;
