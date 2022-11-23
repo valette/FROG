@@ -349,6 +349,61 @@
 				"points" : "points.csv.gz"
 			},
 			"executable": "bin/surf3d"
+		},
+		"MATCH3D": {
+			"parameters": [
+				{
+					"name": "input_volume1",
+					"type": "file",
+					"required": true
+				},
+				{
+					"name": "input_volume2",
+					"type": "file",
+					"required": true
+				},
+				{
+					"prefix": "-Rd ",
+					"name": "RansacDist",
+					"type": "float"
+				},
+				{
+					"prefix": "-Ri ",
+					"name": "RansacMinInliers",
+					"type": "int"
+				},
+				{
+					"prefix": "-Md ",
+					"name": "MatchingDist",
+					"type": "float"
+				},
+				{
+					"prefix": "-Md2 ",
+					"name": "MatchingDist2Second",
+					"type": "float"
+				},
+				{
+					"prefix": "-Ms ",
+					"name": "MatchingScale",
+					"type": "float"
+				},
+				{
+					"prefix": "-b ",
+					"name": "ComputeBoundingBoxes",
+					"type": "int"
+				},
+				{
+					"prefix": "-bb ",
+					"name": "BoundingBox",
+					"type": "string"
+				},
+				{
+					"prefix": "-i ",
+					"name": "writeInliers",
+					"type": "flag"
+				}
+			],
+			"executable": "bin/match3d"
 		}
 
 	}
