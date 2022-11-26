@@ -1,0 +1,14 @@
+{
+  "name": "FROG",
+  "description": "a library to perform SURF-based registration",
+  "license": "GPL-2.0",
+  "version": "0.0.1",
+  "dependencies": {
+    "async": "1.5.2",
+    "desk-client": "0.10.0",
+    "heap": "0.2.7",
+    "lodash": "4.17.21",
+    "numeric": "1.2.6",
+    "ttest": "4.0.0"
+  }
+}

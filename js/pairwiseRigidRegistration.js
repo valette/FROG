@@ -1,0 +1,480 @@
+"use strict";
+
+const { qx, desk, THREE } = window;
+
+console.clear();
+
+const params = {
+
+    MATCH3D : {
+        action : "MATCH3D",
+        RansacDist : 20,
+        MatchingScale : 1.5,
+        MatchingDist : 0.3,
+        MatchingDist2 : 0.98,
+        ComputeBoundingBoxes : 1,
+        RansacMinInliers : 1 //[5, 20, 25, 30, 40]
+    },
+    SURF3D : {
+        action : "SURF3D",
+        threshold : 7000,
+        target_spacing: 1, 
+    },
+    MESHING : {
+        action : "extract_meshes", 
+        threshold : 300,
+        max_number_of_vertices : 100000
+    },
+    inputFiles : [
+
+        "big/00/dea/1.3.12.2.1107.5.1.4.50338.30000012091205384854600003775/1.3.12.2.1107.5.1.4.50338.30000012091205384854600003775.mhd",
+        "big/00/dea/1.3.12.2.1107.5.1.4.50338.30000012091205384854600004095/1.3.12.2.1107.5.1.4.50338.30000012091205384854600004095.mhd",
+        "big/00/corps//19bad/1.3.46.670589.33.1.32963155271087338575.28270001074118335806/1.3.46.670589.33.1.32963155271087338575.28270001074118335806.mhd"
+    ],
+
+    registerAll : false
+};
+
+const volumes = [];
+const meshes = [];
+let links;
+const loadedFiles = [];
+const shuffleButtons = [];
+let surfActions = [];
+let transform;
+
+const win = new qx.ui.window.Window( "SURF" );
+win.set ({layout : new qx.ui.layout.HBox(), width : 700, height : 500});
+const tabView = new desk.TabView();
+const pane = new qx.ui.splitpane.Pane();
+win.add( pane, { flex : 1 } );
+if ( desk.auto ) qx.core.Init.getApplication().getRoot().add( pane,
+    { width : '100%', height : '100%' } );
+
+
+
+function addFileBrowser(index) {
+
+    const fileBrowser = new desk.FileBrowser(null, false);
+    fileBrowser.setFileHandler(function () {}); // disable double click
+    fileBrowser.setWidth(300);
+    fileBrowser.getTree().addListener('changeSelection', function () {
+
+        const files = fileBrowser.getSelectedFiles();
+        if ( !files.length ) return;
+        const fileName = files[0];
+        switch (desk.FileSystem.getFileExtension(fileName)) {
+            case "mhd":
+            case "png":
+            case "jpg":
+                files[ index ].setValue(fileName);
+                break;
+            default : 
+                break;
+        }
+
+    });
+
+    if ( !desk.auto ) tabView.addElement('input ' + ( index + 1 ), fileBrowser );
+
+}
+
+function tweakShader (volume) {
+    volume.getSlices().forEach(function ( slice, index ) {
+        var material = slice.getUserData('mesh').material;
+        material.baseShader.extraShaders.push(
+            'gl_FragColor[3] *= opacity * step(0.10, rawData[0]);');
+        slice.updateMaterial(material);
+    } );
+}
+
+const filesContainer = new qx.ui.container.Composite();
+filesContainer.setLayout( new qx.ui.layout.VBox( 5 ) );
+if ( !desk.auto ) tabView.addElement( "files", filesContainer );
+
+const viewer = new desk.SceneContainer();
+const statusLabel = new qx.ui.basic.Label( "..." );
+viewer.add( statusLabel, { left : "40%", bottom : 10 } );
+const tab = tabView.addElement('3D', viewer);
+tabView.setSelection( [ tab ] );
+
+const showContainer = new qx.ui.container.Composite();
+showContainer.setLayout( new qx.ui.layout.VBox() );
+viewer.add( showContainer, { bottom : 5, right : 5 } );
+
+const files = [ 0, 1 ].map( ( i ) => {
+
+    const field = new desk.FileField( "" );
+    filesContainer.add( new qx.ui.basic.Label( "File " + ( i + 1) ) );
+    filesContainer.add( field );
+    field.setValue( params.inputFiles[ i ] );
+    field.addListener( "changeValue", addMeshesAndMatch );
+    return field;
+
+} );
+
+const sphereGeometry = new THREE.SphereGeometry( 1, 10, 10 ); 
+
+async function addMesh( file, index ) {
+
+    if ( loadedFiles[ index ] == file ) return;
+    if ( meshes[ index ] ) viewer.removeMesh( meshes[ index ], { updateCamera : false } );
+    updateInliers();
+
+    async function MPR() {
+
+        viewers[ index ].removeAllVolumes();
+        return await viewers[ index ].addVolumeAsync( file );
+        //tweakShader( volume );
+
+    }
+
+    const MPRPromise = MPR();
+
+    const meshing = await desk.Actions.executeAsync( {
+        input_volume : file,
+        ...params.MESHING
+    } );
+
+    const mesh = new THREE.Group();
+    viewer.addMesh( mesh, {label : "Input " + ( index + 1 ) } );
+
+    await viewer.addFileAsync( meshing.outputDirectory + "/0.vtk",
+        { label : "bones", parent : mesh } );
+
+    meshes[ index ] = mesh;
+    setMeshesColor();
+    const action = await surfActions[ index ];
+    const pointsFile = action.outputDirectory + "pts.json";
+    const txt = await desk.FileSystem.readFileAsync( pointsFile, { cache : action } );
+    const pts = JSON.parse( txt );
+	const matrix = new THREE.Matrix4();
+	const material = new THREE.MeshLambertMaterial();
+	const imesh = new THREE.InstancedMesh( sphereGeometry, material, pts.points.length );
+	const origin = new THREE.Vector3().fromArray( pts.origin );
+	const v = new THREE.Vector3();
+
+	for ( let [ i, pt ] of pts.points.entries() ) {
+
+        v.copy( pt ).add( origin );
+        matrix.makeScale( pt.scale, pt.scale, pt.scale );
+        matrix.setPosition( ...v.toArray() );
+		imesh.setMatrixAt( i, matrix );
+
+	}
+
+    viewer.addMesh( imesh, { parent : mesh, label : "points" } );
+    const volume = await MPRPromise;
+    viewer.attachVolumeSlices( volume.getSlices(), { parent : mesh } );
+    viewer.render();
+    loadedFiles[ index ] = file;
+    if ( index == 0 ) viewer.resetView();
+    setMeshesColor();
+
+}
+
+async function addMeshesAndMatch() {
+
+    await update( files.map( f => f.getValue() ) );
+
+}
+
+async function match( files ) {
+
+    transform = null;
+
+    surfActions = files.map( file => desk.Actions.executeAsync( {
+
+            input_volume : file,
+            outputFileName : "pts",
+            writeJSON : 1,
+            ...params.SURF3D
+
+        } )
+
+    );
+
+    await Promise.all( surfActions );
+
+    const match = await desk.Actions.executeAsync( {
+
+        input_volume1 : ( await surfActions[ 0 ] ).outputDirectory + "pts.json",
+        input_volume2 : ( await surfActions[ 1 ] ).outputDirectory + "pts.json",
+        writeInliers : true,
+        ...params.MATCH3D
+
+    } );
+
+    const txt = await desk.FileSystem.readFileAsync( match.outputDirectory + "transform.json" );
+    return JSON.parse( txt );
+
+}
+
+async function update( files ) {
+
+    try {
+
+        transform = null;
+        setFinished( false );
+        statusLabel.setValue( "Registering..." );
+        const promise = match( files );
+        await Promise.all( [ 0, 1 ].map( index => addMesh( files[ index ], index ) ) );
+        transform = await promise;
+        if ( !transform ) return statusLabel.setValue( "Failed!");
+        setMeshesColor();
+        statusLabel.setValue( "Done, " + transform.inliers + " inliers.");
+        setFinished( true );
+
+    } catch( e ) { console.warn( e ); }
+
+}
+
+const layout = new qx.ui.layout.VBox( 5 );
+const container = new qx.ui.container.Composite( layout );
+
+const viewers = [ 0, 1 ].map( ( index ) => {
+
+    const MPR = new desk.MPRContainer(null, { nbOrientations : 1 } );
+    MPR.maximizeViewer(0);
+    container.add(MPR, {flex : 1});
+    addFileBrowser( 0 );
+    return MPR;
+
+} );
+
+pane.add( container );
+if ( desk.auto ) pane.add( viewer, 2 );
+else { pane.add( tabView, 2 );
+    win.open();
+    win.center();
+}
+
+const buttonsContainer = new qx.ui.container.Composite();
+buttonsContainer.setLayout( new qx.ui.layout.VBox() );
+viewer.add( buttonsContainer, { left : 5, bottom : 5 } );
+const switchColors = new qx.ui.form.CheckBox( "switch colors" );
+switchColors.addListener("changeValue", setMeshesColor);
+showContainer.add(switchColors);
+
+function setFinished( bool ) {
+
+    for ( let button of shuffleButtons )
+        button.setVisibility( bool ? "visible" : "excluded" );
+
+}
+
+function setMeshesColor() {
+
+    for ( let i = 0; i < 2; i++ ) {
+
+        const index = switchColors.getValue() ? 1 - i : i;
+        const color = index ? [ 1, 0.7, 0.55 ] : [ 1, 1, 1 ];
+        const color2 = index ? [ 1, 0, 0 ] : [ 0, 0, 1 ];
+        const group = meshes[ i ];
+
+        if ( group ) {
+
+            const mesh = group.children[ 0 ];
+
+            if ( mesh ) {
+
+                const material = mesh.material;
+                material.color.setRGB( ...color );
+                material.transparent = true;
+                material.opacity = 0.8;
+                material.side = THREE.DoubleSide;
+                mesh.visible = showMeshes.getValue();
+
+            }
+
+            const slices = group.children[ 2 ];
+            if ( slices ) slices.visible = showSlices.getValue();
+            const points = group.children[ 1 ];
+
+            if ( points ) {
+                points.material.color.setRGB( ...color2 );
+                points.visible = showPoints.getValue();
+            }
+
+        }
+
+        const button = shuffleButtons[ i ];
+        if ( button ) button.setDecorator( index ? "button-hover" : "main");
+
+    }
+
+    const mesh = meshes[ 1 ];
+
+    if ( mesh ) {
+
+        if ( transform && showRegistration.getValue() ) {
+
+            mesh.position.fromArray( transform.translation ).multiplyScalar( -1 );
+            mesh.scale.setScalar( 1.0 / transform.scale );
+
+        } else {
+
+            mesh.position.set( 1000, 0, 0 );
+            mesh.scale.setScalar( 1.0 );
+            if ( ! meshes[ 0 ]?.children[ 0 ] ) return;
+            if ( ! meshes[ 1 ]?.children[ 0 ] ) return;
+            const box1 = meshes[ 0 ].children[ 0 ].geometry.boundingBox;
+            const box2 = meshes[ 1 ].children[ 0 ].geometry.boundingBox;
+            const center = new THREE.Vector3();
+            box1.getCenter( center );
+            box2.getCenter( mesh.position );
+            mesh.position.multiplyScalar( -1 ).add( center );
+            mesh.position.x += 1000;
+
+        }
+
+    }
+
+    updateInliers();
+    viewer.render();
+
+}
+
+function updateInliers() {
+
+    if ( links ) viewer.removeMesh( links );
+    links = null;
+    if ( !transform || !showInliers.getValue() ) return;
+    const nInliers = transform.inliers;
+    const geometry = new THREE.BufferGeometry();
+    const material = new THREE.LineBasicMaterial( { color : 0x000000 });
+    const positions = new Float32Array( nInliers *  6 );
+    const pos = new THREE.BufferAttribute( positions, 3 );
+    geometry.setAttribute( 'position', pos );
+    const mesh1 = meshes[ 0 ].children[ 1 ];
+    const mesh2 = meshes[ 1 ].children[ 1 ];
+    const group2 = meshes[ 1 ];
+    group2.updateMatrix();
+    const matrix1 = new THREE.Matrix4();
+    const matrix2 = new THREE.Matrix4();
+    const p1 = new THREE.Vector3();
+    const p2 = new THREE.Vector3();
+    const s = new THREE.Vector3();
+    const q = new THREE.Quaternion();
+
+    for ( let i = 0; i < nInliers; i ++ ) {
+
+        const [ point1, point2 ] = transform.allInliers[ i ];
+        mesh1.getMatrixAt( point1, matrix1 );
+        mesh2.getMatrixAt( point2, matrix2 );
+        matrix1.decompose( p1, q, s );
+        matrix2.decompose( p2, q, s );
+        p2.applyMatrix4( group2.matrix );
+        pos.setXYZ( i * 2, ...p1.toArray() );
+        pos.setXYZ( 1 + i * 2, ...p2.toArray() );
+
+    }
+    
+    links = new THREE.LineSegments( geometry, material, THREE.LineSegments );
+    viewer.addMesh( links, { label : "links" } );
+    
+}
+
+const showRegistration = new qx.ui.form.CheckBox('Show registration');
+showContainer.add( showRegistration );
+showRegistration.setValue( true );
+showRegistration.addListener( "changeValue", setMeshesColor );
+
+const showPoints = new qx.ui.form.CheckBox('Show points');
+showContainer.add( showPoints );
+showPoints.setValue( false );
+showPoints.addListener( "changeValue", setMeshesColor );
+
+const showSlices = new qx.ui.form.CheckBox('Show slices');
+showContainer.add( showSlices );
+showSlices.setValue( false );
+showSlices.addListener( "changeValue", setMeshesColor );
+
+const showInliers = new qx.ui.form.CheckBox('Show inliers');
+showContainer.add( showInliers );
+showInliers.setValue( false );
+showInliers.addListener( "changeValue", setMeshesColor );
+
+const showMeshes = new qx.ui.form.CheckBox('Show meshes');
+showContainer.add( showMeshes );
+showMeshes.setValue( true );
+showMeshes.addListener( "changeValue", setMeshesColor );
+
+let windowIsClosed;
+
+win.addListener('close', function () {
+
+    windowIsClosed = true;
+    for ( let MPR of viewers ) MPR.dispose();
+    tabView.dispose();
+    win.destroy();
+    viewer.dispose();
+
+} );
+
+desk.FileSystem.traverse( "big/00/corps/", traverse, afterTraverse );
+
+function traverse( file ) {
+
+    if ( desk.FileSystem.getFileExtension(file) === "mhd" ) volumes.push (file);
+
+}
+
+async function afterTraverse() {
+
+    console.log( volumes.length + " files" );
+    addRandomButton( 0 );
+    addRandomButton( 1 );
+    setMeshesColor();
+
+    if ( desk.auto || !params.registerAll ){
+
+        addMeshesAndMatch().catch( console.warn );
+        return;
+
+    }
+
+    for ( let volume of volumes ) {
+
+        for ( let volume2 of volumes ) {
+
+            if ( windowIsClosed ) break;
+            await update( [ volume, volume2 ] );
+
+        }
+
+    }
+
+    console.log( "done" );
+
+}
+
+viewer.add( new qx.ui.basic.Label( "contrast" ), { top : 10, right : 0 } );
+const slider = new qx.ui.form.Slider( "vertical" );
+slider.setHeight( 300 );
+viewer.add( slider, { right : 10, top : 30 } );
+slider.setValue( 100 - 1 / 0.04 );
+slider.addListener( "changeValue", () => {
+    viewer.getScene().traverse( object => {
+        const slice = object.userData?.viewerProperties?.volumeSlice;
+        if ( !slice ) return;
+        slice.setContrast( ( 100 - slider.getValue() ) * 0.04);
+    } );
+});
+
+function addRandomButton( index ) {
+
+    const button = new qx.ui.form.Button( "New " + ( index + 1 ) );
+    const rng = new desk.Random( index * 1000 );
+    shuffleButtons[ index ] = button;
+
+    button.addListener("execute", function () {
+
+        files[ index ].setValue( volumes[ Math.floor( rng.random() * volumes.length ) ] );
+
+    });
+
+    buttonsContainer.add( button );
+
+}
+

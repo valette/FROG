@@ -1,4 +1,17 @@
 {
+	"dataDirs" : {
+		"FROG" : {
+			"path" : "./js",
+			"hidden" : true
+		}
+	},
+
+	"init" : [
+		"FROG/lib/laplaceSolver.js",
+		"FROG/lib/LSRegistration.js",
+		"FROG/lib/TextSpriteHelper.js",
+		"FROG/lib/FROG.js"
+	],
 
 	"actions": {
 		"dummyVolumeGenerator" : {
@@ -404,6 +417,34 @@
 				}
 			],
 			"executable": "bin/match3d"
+		},
+		"averageVolumes": {
+			"parameters": [
+				{
+					"name": "inputVolumes",
+					"type": "fileArray",
+					"required": true
+				}
+			],
+			"executable": "bin/AverageVolumes"
+		},
+		"LSRegistration" : {
+			"parameters": [
+				{
+					"name": "files",
+					"type": "file",
+					"required": true
+				}
+			],
+			"executable": "js/bin/LSRegistration.js",
+			"dependencies" : [
+				"SURF3D",
+				"MATCH3D",
+				"js/lib/LSRegistration.js",
+				"js/lib/laplaceSolver.js",
+				"js/lib/TextSpriteHelper.js",
+				"js/lib/vtkOpenSURF.js"
+			]
 		}
 
 	}
