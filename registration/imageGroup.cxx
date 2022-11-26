@@ -1442,7 +1442,7 @@ void ImageGroup::saveTransforms() {
 		vtkGeneralTransform *trans = this->images[ image1 ].allTransforms;
 		ostringstream file;
 		file << "transforms/" << image1 << ".json";
-		writeFrogJSON( trans, file.str().c_str() );
+		writeFrogJSON( trans, file.str().c_str(), !this->writeSingleFileTransforms );
 
 	}
 

@@ -54,6 +54,7 @@ int main( int argc, char *argv[] ) {
 		cout << "-nt number : set number of threads. Default : number of cores" << endl;
 		cout << "-mf file     : path+name of measure.csv file." << endl;
 		cout << "-wp 0/1      : write pairs, distances and probabilities. Default : " << group.writePairs << endl;
+		cout << "-j           : outputs a single big JSON file for each transform. Default : " << group.writeSingleFileTransforms << endl;
 
 		return( 1 );
 
@@ -172,6 +173,11 @@ int main( int argc, char *argv[] ) {
 
 		if ( strcmp( key, "-wp" ) == 0 ) {
 			group.writePairs = atoi( value );
+		}
+
+		if ( strcmp( key, "-j" ) == 0 ) {
+			group.writeSingleFileTransforms = true;
+			argumentsIndex--;
 		}
 
 		argumentsIndex += 2;

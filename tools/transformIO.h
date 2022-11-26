@@ -3,13 +3,17 @@
 
 #include <string>
 #include <limits>
+#include <filesystem>
 
 #include <vtkGeneralTransform.h>
 #include <vtkImageData.h>
 #include <vtkBSplineTransform.h>
 #include <vtkMatrixToLinearTransform.h>
+#include <vtkNIFTIImageReader.h>
+#include <vtkNIFTIImageWriter.h>
 
 #include "../vtkOpenSURF3D/picojson.h"
+
 using namespace picojson;
 
 void writeTFM( vtkGeneralTransform *generalTransform, const char *fileName ) {
@@ -73,9 +77,10 @@ void writeTFM( vtkGeneralTransform *generalTransform, const char *fileName ) {
 
 }
 
-void writeFrogJSON( vtkGeneralTransform *generalTransform, const char *fileName ) {
+void writeFrogJSON( vtkGeneralTransform *generalTransform, const char *fileName, bool compact = false ) {
 
 	picojson::array transforms;
+	int niiCounter = 0;
 
 	for ( int i = 0; i < generalTransform->GetNumberOfConcatenatedTransforms(); i++ ) {
 
@@ -104,39 +109,55 @@ void writeFrogJSON( vtkGeneralTransform *generalTransform, const char *fileName 
 		} else if ( strcmp( name, "vtkBSplineTransform" ) == 0 ) {
 
 			vtkImageData *imageData = ( ( vtkBSplineTransform * ) transform )->GetCoefficientData();
-			int dims[ 3 ];
-			double ori[ 3 ];
-			double sp[ 3 ];
-			imageData->GetDimensions( dims );
-			imageData->GetSpacing( sp );
-			imageData->GetOrigin( ori );
-			picojson::array dimensions;
-			picojson::array origin;
-			picojson::array spacing;
 
-			for ( int k = 0; k < 3; k ++ ) {
+			if ( compact ) {
 
-				dimensions.push_back( picojson::value( ( double ) dims[ k ] ) );
-				origin.push_back( picojson::value( ori[ k ] ) );
-				spacing.push_back( picojson::value( sp[ k ] ) );
+				std::string name( fileName );
+				name += ".";
+				name += std::to_string( niiCounter++ );
+				name += ".nii.gz";
+				std::filesystem::path path( name );
+				trans[ "file" ] = picojson::value( path.filename() );
+				vtkNIFTIImageWriter *writer = vtkNIFTIImageWriter::New();
+				writer->SetInputData( imageData );
+				writer->SetFileName( name.c_str() );
+				writer->Write();
+				writer->Delete();
+
+			} else {
+
+				int dims[ 3 ];
+				double ori[ 3 ];
+				double sp[ 3 ];
+				imageData->GetDimensions( dims );
+				imageData->GetSpacing( sp );
+				imageData->GetOrigin( ori );
+				picojson::array dimensions;
+				picojson::array origin;
+				picojson::array spacing;
+
+				for ( int k = 0; k < 3; k ++ ) {
+
+					dimensions.push_back( picojson::value( ( double ) dims[ k ] ) );
+					origin.push_back( picojson::value( ori[ k ] ) );
+					spacing.push_back( picojson::value( sp[ k ] ) );
+
+				}
+
+				trans[ "dimensions" ] = picojson::value( dimensions );
+				trans[ "origin" ] = picojson::value( origin );
+				trans[ "spacing" ] = picojson::value( spacing );
+				int count = 0;
+				float *values = ( float * ) imageData->GetScalarPointer();
+				int nValues = 3 * dims[ 0 ] * dims[ 1 ] * dims[ 2 ];
+				picojson::array coeffs;
+
+				for ( int j = 0; j < nValues; j++ )
+					coeffs.push_back ( picojson::value( values[ j ] ) );
+
+				trans[ "coeffs" ] = picojson::value( coeffs );
 
 			}
-
-			trans[ "dimensions" ] = picojson::value( dimensions );
-			trans[ "origin" ] = picojson::value( origin );
-			trans[ "spacing" ] = picojson::value( spacing );
-			int count = 0;
-			float *values = ( float * ) imageData->GetScalarPointer();
-			int nValues = 3 * dims[ 0 ] * dims[ 1 ] * dims[ 2 ];
-			picojson::array coeffs;
-
-			for ( int j = 0; j < nValues; j++ ) {
-
-				coeffs.push_back ( picojson::value( values[ j ] ) );
-
-			}
-
-			trans[ "coeffs" ] = picojson::value( coeffs );
 
 		}
 
@@ -260,7 +281,7 @@ vtkGeneralTransform *readTFM ( const char *fileName ) {
 
 }
 
-vtkGeneralTransform *readFrogJSON ( picojson::object root ) {
+vtkGeneralTransform *readFrogJSON ( picojson::object root, const char *file ) {
 
 	vtkGeneralTransform *transform = vtkGeneralTransform::New();
 	transform->PostMultiply();
@@ -295,33 +316,58 @@ vtkGeneralTransform *readFrogJSON ( picojson::object root ) {
 
 		} else if ( type.compare ( "vtkBSplineTransform" ) == 0 ) {
 
-			double sp[ 3 ], ori[ 3 ];
-			int dims[ 3 ];
-
-			picojson::array dimensions = trans[ "dimensions" ].get< picojson::array >();
-			picojson::array origin = trans[ "origin" ].get< picojson::array >();
-			picojson::array spacing = trans[ "spacing" ].get< picojson::array >();
-
-			for (int i = 0 ; i < 3 ; i++) {
-
-				dims[ i ] = dimensions[ i ].get< double >();
-				sp[ i ] = spacing[ i ].get< double >();
-				ori[ i ] = origin[ i ].get< double >();
-
-			}
-
 			vtkImageData *coefficients = vtkImageData::New();
-			coefficients->SetOrigin( ori );
-			coefficients->SetSpacing( sp );
-			coefficients->SetDimensions( dims );
-			coefficients->AllocateScalars( VTK_FLOAT, 3);
-			float *p = ( float *) coefficients->GetScalarPointer();
-			int nb = 3 * dims[ 0 ] * dims[ 1 ] * dims[ 2 ];
-			picojson::array coeffs = trans[ "coeffs" ].get< picojson::array >();
 
-			for ( int i = 0; i < nb ; i++ ) {
+			auto nii = trans[ "file" ];
 
-				p[ i ] = coeffs[ i ].get< double >();
+			if ( nii.is<picojson::null>() ) {
+
+				double sp[ 3 ], ori[ 3 ];
+				int dims[ 3 ];
+
+				picojson::array dimensions = trans[ "dimensions" ].get< picojson::array >();
+				picojson::array origin = trans[ "origin" ].get< picojson::array >();
+				picojson::array spacing = trans[ "spacing" ].get< picojson::array >();
+
+				for (int i = 0 ; i < 3 ; i++) {
+
+					dims[ i ] = dimensions[ i ].get< double >();
+					sp[ i ] = spacing[ i ].get< double >();
+					ori[ i ] = origin[ i ].get< double >();
+
+				}
+
+				coefficients->SetOrigin( ori );
+				coefficients->SetSpacing( sp );
+				coefficients->SetDimensions( dims );
+				coefficients->AllocateScalars( VTK_FLOAT, 3);
+				float *p = ( float *) coefficients->GetScalarPointer();
+				int nb = 3 * dims[ 0 ] * dims[ 1 ] * dims[ 2 ];
+				picojson::array coeffs = trans[ "coeffs" ].get< picojson::array >();
+
+				for ( int i = 0; i < nb ; i++ ) {
+
+					p[ i ] = coeffs[ i ].get< double >();
+
+				}
+
+			} else {
+
+				std::filesystem::path niiFile = nii.get<std::string>();
+				std::filesystem::path path( file );
+				vtkNIFTIImageReader *reader = vtkNIFTIImageReader::New();
+				reader->SetFileName( ( path.parent_path() / niiFile ).c_str() );
+				reader->Update();
+				coefficients->ShallowCopy( reader->GetOutput() );
+				reader->Delete();
+				double Origin[3];
+				vtkMatrix4x4 *qForm = reader->GetQFormMatrix();
+				if (!qForm) qForm = vtkMatrix4x4::New();
+
+				for( int i = 0; i < 3; i++)
+					Origin[ i ] = qForm->GetElement( i, 3 );
+
+				coefficients->SetOrigin( Origin );
 
 			}
 
@@ -338,7 +384,7 @@ vtkGeneralTransform *readFrogJSON ( picojson::object root ) {
 
 }
 
-vtkGeneralTransform *readJSONfromString ( const char *str ) {
+vtkGeneralTransform *readJSONfromString ( const char *str, const char *file ) {
 
 	picojson::value v;
 	std::string err;
@@ -346,7 +392,7 @@ vtkGeneralTransform *readJSONfromString ( const char *str ) {
 	if ( !err.empty() ) std::cerr << err << std::endl;
 	object trans = v.get<object>();	
 
-	if ( !( trans[ "transforms" ].is<picojson::null>() ) ) return readFrogJSON( trans );
+	if ( !( trans[ "transforms" ].is<picojson::null>() ) ) return readFrogJSON( trans, file );
 
 	cout << str << endl;
 	double scale = trans[ "scale" ].get<double>();
@@ -375,7 +421,7 @@ vtkGeneralTransform *readJSON( const char *fileName ) {
 	std::string str( ( std::istreambuf_iterator< char >( file ) ),
 		std::istreambuf_iterator< char >() );
 
-	return readJSONfromString( str.c_str() );
+	return readJSONfromString( str.c_str(), fileName );
 
 }
 

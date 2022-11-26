@@ -40,6 +40,7 @@ public:
 	float RANSACInlierDistance; // maximum inlier distance for RANSAC
 	float RANSACMaxScale; // maximum allowed scale for RANSAC
 	char *fixedTransformsDirectory;
+	bool writeSingleFileTransforms; // outputs a single big JSON file for each transform
 
 	void readLandmarks( const char *path );
 
@@ -66,6 +67,7 @@ public:
 			useRANSAC = true;
 			useScale = true;
 			writePairs = false;
+			writeSingleFileTransforms = false;
 		};
 
 protected:
