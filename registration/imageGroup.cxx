@@ -197,6 +197,7 @@ void ImageGroup::setupDeformableTransforms( int level ) {
 	cout << "Grid dimensions (control points): ";
 	print( dims, 3 );
 
+	#pragma omp parallel for
 	for ( int i = this->numberOfFixedImages; i < this->images.size(); i++ ) {
 
 		vtkImageData *coeffs = vtkImageData::New();
@@ -206,11 +207,8 @@ void ImageGroup::setupDeformableTransforms( int level ) {
 		coeffs->AllocateScalars( VTK_FLOAT, 3 );
 		float *p = ( float *) coeffs->GetScalarPointer();
 
-		for ( int i = 0; i < 3 * dims[ 0 ] * dims[ 1 ] * dims[ 2 ]; i++ ) {
-
+		for ( int i = 0; i < 3 * dims[ 0 ] * dims[ 1 ] * dims[ 2 ]; i++ )
 			p[ i ] = 0;
-
-		}
 
 		vtkBSplineTransform *transform = vtkBSplineTransform::New();
 		transform->SetCoefficientData( coeffs );
@@ -404,12 +402,12 @@ double ImageGroup::updateDeformableTransforms() {
 	}
 
 	int nValues = dims[ 0 ] * dims[ 1 ] * dims[ 2 ];
-	int nCoeffs = 0, nBigCoeffs = 0;
+	int nBigCoeffs = 0;
 	int direction = 0;
 	const float maxD = this->maxDisplacementRatio;
 	const bool apply = this->numberOfFixedImages == 0;
 
-	//#pragma omp parallel for reduction( +:nCoeffs, nBigCoeffs )
+	#pragma omp parallel for reduction( + : nBigCoeffs )
 	for ( int i = 0; i < nValues; i++ ) {
 
 		int offset = i * 4;
@@ -437,8 +435,6 @@ double ImageGroup::updateDeformableTransforms() {
 				if ( fabs( coeffs[ image ][ offset + j ] ) > maxD * spacing[ j ] )
 					nBigCoeffs++;
 
-				nCoeffs++;
-
 			}
 
 		}
@@ -452,6 +448,7 @@ double ImageGroup::updateDeformableTransforms() {
 
 	}
 
+	#pragma omp parallel for
 	for ( int image1 = this->numberOfFixedImages; image1 < nImages; image1++ ) {
 
 		Image &image = this->images[ image1 ];
