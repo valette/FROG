@@ -94,6 +94,9 @@ void ImageGroup::run() {
 			this->transformPoints();
 			Measure measure;
 			int numberOfGrids = 1;
+			float alpha = this->deformableAlpha;
+			cout << "alpha = " << alpha << endl;
+			int numberOfDiffeomorphicIterations = 0;
 
 			for ( int iteration = 0; iteration < this->deformableIterations; iteration++ ) {
 
@@ -103,10 +106,17 @@ void ImageGroup::run() {
 
 				if ( !( iteration % this->statIntervalUpdate ) ) this->updateStats();
 				if ( this->printStats ) this->displayStats();
-				measure.E = this->updateDeformableTransforms();
+				measure.E = this->updateDeformableTransforms( alpha );
 				cout << "E = " << measure.E;
 				checkNaN( measure.E );
 				if ( measure.E < 0 ) {
+
+					if ( numberOfDiffeomorphicIterations == 0 ) {
+
+						alpha /= 2;
+						cout << "Halving alpha. New Value : " << alpha << endl;
+
+					}
 
 					cout << " creating new grid" << endl;
 					numberOfGrids++;
@@ -114,10 +124,12 @@ void ImageGroup::run() {
 					this->transformPoints( true );
 					this->setupDeformableTransforms( level );
 					this->transformPoints();
+					numberOfDiffeomorphicIterations = 0;
 					continue;
 
 				}
 
+				numberOfDiffeomorphicIterations++;
 				this->transformPoints();
 				if ( !this->computeLandmarkDistances( measure ) ) cout << endl;
 				this->measures.push_back( measure );
@@ -243,7 +255,7 @@ inline void vtkBSplineTransformWeights( double F[ 4 ], double f ) {
 
 }
 
-double ImageGroup::updateDeformableTransforms() {
+double ImageGroup::updateDeformableTransforms( const float alpha ) {
 
 	double sDistances = 0, sWeights = 0;
 
@@ -349,7 +361,6 @@ double ImageGroup::updateDeformableTransforms() {
 		}
 
 		// apply gradient to transform
-		const float alpha = this->deformableAlpha;
 		float *coeffs = ( float *) ( ( vtkBSplineTransform * ) image.transform )
 			->GetCoefficientData()->GetScalarPointer();
 

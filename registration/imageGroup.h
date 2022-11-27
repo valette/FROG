@@ -108,7 +108,7 @@ protected:
 	void updateStats(); // compute Maxwell distribution parameters
 	void countInliers(); // displays number of inliers/outliers
 
-	double updateDeformableTransforms(); // returns error value or -1 if diffeomorphism is not guaranteed
+	double updateDeformableTransforms( const float alpha ); // returns error value or -1 if diffeomorphism is not guaranteed
 	double updateLinearTransforms();
 
 	void displayStats();
