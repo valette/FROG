@@ -14,6 +14,25 @@
 	],
 
 	"actions": {
+		"transformPoints" : {
+			"parameters" : [
+				{
+					"name" : "inputPoints",
+					"type" : "file",
+					"required" : true
+				},
+				{
+					"name" : "transform",
+					"type" : "file",
+					"required" : true
+				}
+			],
+			"dependencies" : [
+				"tools/transformIO.py"
+			],
+			"engine" : "python",
+			"executable" : "tools/transformPoints.py"
+		},
 		"dummyVolumeGenerator" : {
 			"parameters" : [
 				{
