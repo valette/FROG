@@ -5,7 +5,7 @@ const { async, THREE, desk, FROG, qx, visceral, _, ACVD } = window;
 const filter1 = "all"; // registration batch. Can be "all", "women" or "men"
 const filter2 = "all"; // average image computation. Can be "all", "women" or "men" or a volume id
 
-let spacing = 3; // spacing of the output mean image
+let spacing = 5; // spacing of the output mean image
 
 let placesAll = [ // input directories
 
@@ -22,8 +22,6 @@ let placesAll = [ // input directories
 ];
 
 let displayLandmarks = false;
-let displayAverageImage = false;
-let displayIndividualVolumes = false;
 
 let useRAW = false;
 let useSIFT = false;
@@ -71,7 +69,7 @@ displayLinear : 1,
 //statsInterval : 1,
 //    linearIterations : 200,
     deformableLevels : 3,
-//    deformableIterations : 200,
+    deformableIterations : 200,
 //    deformableAlpha : 0.3,
 //    initialGridSize : 100,
 //    inlierThreshold : 0.01
@@ -87,7 +85,7 @@ let organs = {
 
     bones: {
 
-        threshold : 200
+        threshold : 200,
 
     },
 
@@ -148,7 +146,7 @@ const viewer = new desk.MeshViewer( {
 let vv;
 viewer.getControls().noRotate = true;
 
-if ( desk.auto ) viewer.fillScreen();
+//if ( desk.auto ) viewer.fillScreen();
 
 const list = new qx.ui.form.List();
 viewer.add( list, { top : 0, left : 0 } );
@@ -238,13 +236,14 @@ const meshes = await async.mapLimit( files, loadVolumeConcurrency,
         const mesh = await viewer.addVolumeAsync( file , {
 
             orientations : [ 2 ],
-            sliceWith : { sampling_ratio : 0.1 }
+            sliceWith : { sampling_ratio : 0.1 },
+            parent : anchor
 
         } );
 
         mesh.userData.id = id;
         mesh.userData.file = file;
-        anchor.add( mesh );
+//        anchor.add( mesh );
 
         const i = id % width;
         const j = Math.floor( id / width );
@@ -298,7 +297,7 @@ container2.setVisibility( 'excluded' );
 
 container.set( {
 
-    width : 150,
+    width : 200,
     backgroundColor : 'white'
 
 } );
@@ -355,9 +354,13 @@ useCustomPointBox.addListener( 'changeValue', function ( e ) {
 } );
 
 
-container.add( new qx.ui.basic.Label( "Deformable levels : " ) );
-const deformableLevels = new qx.ui.form.Spinner( 0, registrationParams.deformableLevels, 5 );
+container.add( new qx.ui.basic.Label( "Deformable levels: " ) );
+const deformableLevels = new qx.ui.form.Spinner( 0, registrationParams.deformableLevels, 6 );
 container.add( deformableLevels );
+
+container.add( new qx.ui.basic.Label( "Iterations/level: " ) );
+const deformableIterations = new qx.ui.form.Spinner( 0, registrationParams.deformableIterations, 1000 );
+container.add( deformableIterations );
 
 const registerButton = new qx.ui.form.Button( 'register' );
 container.add( registerButton );
@@ -365,23 +368,30 @@ registerButton.addListener( 'execute', function () {
     computeRegistration().catch( ( e ) => { console.warn( e ); } );
 } );
 
-const displayAverageBox = new qx.ui.form.CheckBox( 'display average' );
-displayAverageBox.setValue( displayAverageImage );
-displayAverageBox.addListener( "changeValue", e =>  {
-    displayAverageImage = e.getData();
-    displayMeshes.setVisibility( displayAverageImage ? "visible" : "excluded" );
-    spacingContainer.setVisibility( e.getData() ? "visible" : "excluded" );
+const showBones = new qx.ui.form.CheckBox( 'transform meshes' );
+container.add( showBones );
+
+const displayAverageImage = new qx.ui.form.CheckBox( 'Compute average' );
+//displayAverageImage.setValue( false );
+displayAverageImage.addListener( "changeValue", e =>  {
+
+    for ( let container of [ spacingContainer, displayMeshes, displayTransformedImages ] )
+        container.setVisibility( e.getData() ? "visible" : "excluded" );
 
 } );
-container.add( displayAverageBox );
+container.add( displayAverageImage );
 
 const spacingContainer = new qx.ui.container.Composite( new qx.ui.layout.HBox() );
 spacingContainer.add( new qx.ui.basic.Label( "spacing (mm)  " ) );
 const spacingForm = new qx.ui.form.TextField( spacing.toString() );
 spacingForm.addListener( "changeValue", e => spacing = parseFloat( e.getData() ) );
 spacingContainer.add( spacingForm, { flex : 1 } );
-spacingContainer.setVisibility( displayAverageBox.getValue() ? "visible" : "excluded" );
+spacingContainer.setVisibility( "excluded" );
 container.add( spacingContainer );
+
+const displayTransformedImages = new qx.ui.form.CheckBox( 'display transformed images' );
+container.add( displayTransformedImages );
+displayTransformedImages.setVisibility( "excluded" );
 
 const displayMeshes = new qx.ui.form.CheckBox( 'display meshes' );
 container.add( displayMeshes );
@@ -460,6 +470,7 @@ async function computeRegistration () {
     const fullMatchParams = Object.assign( {}, matchParams );
 
     registrationParams.deformableLevels = deformableLevels.getValue();
+    registrationParams.deformableIterations = deformableIterations.getValue();
 
     const reg = new window.FROG.DeformableGroupwiseRegistration( volumesToRegister,
         { SIFT3DParams, SURF3DParams, RAWParams, matchParams : fullMatchParams,
@@ -528,29 +539,6 @@ async function computeRegistration () {
     } );
 
     const output = await reg.execute();
-
-    if ( output.registration.status === "CACHED" ) {
-
-        const log = await desk.FileSystem.readFileAsync(
-            output.registration.outputDirectory + "/action.log" );
-
-        const scales = log.split( '\n' ).filter( l => l.includes( 'scale' ) )
-            .slice( -meshes.length ).map( parseLinear );
-
-        const translations = log.split( '\n' ).filter( l => l.includes( 'translation' ) )
-            .slice( -meshes.length ).map( parseLinear );
-
-        for ( let [ i, mesh ] of meshes.entries() ) {
-
-            mesh.position.fromArray( translations[ i ] );
-            mesh.scale.fromArray( scales[ i ] );
-
-        }
-
-        viewer.render();
-
-    }
-
     const registration = output.registration;
     const filefilter2 = getVolumeFilter( filter2 );
     console.log( "registration : ", output );
@@ -558,7 +546,7 @@ async function computeRegistration () {
     output.volumes = output.volumes.filter( vol => filefilter2( vol.volume ) );
     console.log(output.volumes);
     output.spacing = spacing;
-/*
+
     // measure landmark dispersion among volumes from the VISCERAL database
     const stats = await visceral.getLandmarkDistances( output );
 
@@ -579,7 +567,7 @@ async function computeRegistration () {
 
         const landmarkViewer = new desk.MeshViewer();
         const radius = 5;
-        const geometry = new THREE.SphereBufferGeometry( radius, 32, 32 );
+        const geometry = new THREE.SphereGeometry( radius, 32, 32 );
         const scene = landmarkViewer.getScene();
 
         for ( let name of Object.keys( stats.stats ) ) {
@@ -594,7 +582,7 @@ async function computeRegistration () {
                 const mesh = new THREE.Mesh( geometry, material );
                 mesh.position.fromArray( landmark.position );
                 mesh.userData.landmark = landmark;
-                landmarkViewer.addMesh( mesh );
+                landmarkViewer.addMesh( mesh, {  label : name } );
 
             }
 
@@ -609,64 +597,72 @@ async function computeRegistration () {
         }
 
     }
-*/
-    if ( displayAverageImage ) {
 
-        const commonSpace = new FROG.CommonSpaceMeanImage( output );
-        commonSpace.on('log', message => statusLabel.setValue( message ) );
-        const result = await commonSpace.execute();
-        console.log( result );
-        const averageVolume = await result.averageVolume;
-        console.log( "Average volume : ", averageVolume );
 
-        if ( !vv ) {
+    let showBonesPromise;
+    if ( showBones.getValue() ) showBonesPromise = extractMeshes( output );
 
-            vv = new desk.VolumeViewer();
-            vv.getWindow().addListener( "beforeClose", () => vv = null );
 
-        }
+    if ( displayAverageImage.getValue() ) await computeAverageImage( output );
+    await showBonesPromise;
+    statusLabel.setValue( 'All done (' + output.volumes.length + ' volumes)' );
 
-        vv.addVolume( averageVolume, { format : 0, label : filter2 + " (" + output.volumes.length + ' images)' } );
+}
 
-        if ( displayMeshes.getValue() ) {
+viewer.add( new qx.ui.basic.Label( "contrast" ), { bottom : 1, left : 0 } );
+const slider = new qx.ui.form.Slider( "horizontal" );
+slider.setWidth( 300 );
+viewer.add( slider, { left : 60, bottom : 0 } );
+slider.setValue( 1 / 0.04 );
+slider.addListener( "changeValue", () => {
+    viewer.getScene().traverse( object => {
+        const slice = object.userData?.viewerProperties?.volumeSlice;
+        if ( !slice ) return;
+        slice.setContrast( ( slider.getValue() ) * 0.04);
+    } );
+});
 
-            const organViewer = new desk.MeshViewer();
-            organViewer.getWindow().setCaption( filter1 + " " + filter2 + " (" + output.volumes.length + ' images)' );
-            await ACVD.extractMeshes( averageVolume, organs, organViewer );
 
-        }
 
-        if ( displayIndividualVolumes ) {
+async function computeAverageImage( output ) {
 
-            const transformedVolumeViewer = new desk.VolumeViewer();
+    const commonSpace = new FROG.CommonSpaceMeanImage( output );
+    commonSpace.on('log', message => statusLabel.setValue( message ) );
+    const result = await commonSpace.execute();
+    console.log( result );
+    const averageVolume = await result.averageVolume;
+    console.log( "Average volume : ", averageVolume );
 
-            for ( let [ index, volume ] of result.transformedVolumes.entries() ) {
+    if ( !vv ) {
 
-                await transformedVolumeViewer.addVolume( volume, { label : "" + index} );
+        vv = new desk.VolumeViewer();
+        vv.getWindow().addListener( "beforeClose", () => vv = null );
 
-            }
+    }
+
+    vv.addVolume( averageVolume, { format : 0, label : filter2 + " (" + output.volumes.length + ' images)' } );
+
+    if ( displayMeshes.getValue() ) {
+
+        const organViewer = new desk.MeshViewer();
+        organViewer.getWindow().setCaption( filter1 + " " + filter2 + " (" + output.volumes.length + ' images)' );
+        await ACVD.extractMeshes( averageVolume, organs, organViewer );
+
+    }
+
+    if ( displayTransformedImages.getValue() ) {
+
+        const transformedVolumeViewer = new desk.VolumeViewer();
+
+        for ( let [ index, volume ] of result.transformedVolumes.entries() ) {
+
+            await transformedVolumeViewer.addVolume( volume, { label : "" + index } );
 
         }
 
     }
 
-    statusLabel.setValue( 'All done (' + output.volumes.length + ' volumes)' );
-
 }
-
-viewer.add( new qx.ui.basic.Label( "contrast" ), { top : 80, left : 0 } );
-const slider = new qx.ui.form.Slider( "vertical" );
-slider.setHeight( 300 );
-viewer.add( slider, { left : 10, top : 100 } );
-slider.setValue( 100 - 1 / 0.04 );
-slider.addListener( "changeValue", () => {
-    viewer.getScene().traverse( object => {
-        const slice = object.userData?.viewerProperties?.volumeSlice;
-        if ( !slice ) return;
-        slice.setContrast( ( 100 - slider.getValue() ) * 0.04);
-    } );
-});
-
 
 }
 
@@ -677,6 +673,59 @@ run().catch( ( e ) => {
 });
 
 
+async function extractMeshes( output ) {
+
+    const viewer = new desk.THREE.Viewer();
+    viewer.getWindow().setCaption( "All organs" );
+
+    const groups = {};
+
+    for ( let organ of Object.keys( organs ) ) {
+
+        const group = groups[ organ ] = new THREE.Group();
+        viewer.addMesh( group, { label : organ } );
+
+    }
+
+    const promises = output.volumes.entries().map( async entry => {
+
+        const [ index, obj ] = entry;
+        const meshes = await ACVD.extractMeshes( obj.volume, organs );
+
+        const promises = Object.keys( organs ).map( async organ => {
+
+            const convert = await desk.Actions.executeAsync( {
+
+                action : "mesh2obj",
+                inputMesh : meshes[ organ ].file
+
+            } );
+
+            const transform = await desk.Actions.executeAsync( {
+
+                action : "MeshTransform",
+                transform : obj.transform,
+                source : convert.outputDirectory + "mesh.obj"
+
+            } );
+
+            const mesh = await viewer.addFileAsync( transform.outputDirectory + "output.obj",
+                { label : organ + " " + index, parent : groups[ organ ] });
+
+            const opts = organs[ organ ];
+			if ( opts.material ) mesh.material.setValues( opts.material );
+			if ( opts.transparent != undefined ) mesh.transparent = opts.transparent;
+			if ( opts.renderOrder != undefined ) mesh.renderOrder = opts.renderOrder;
+
+        } );
+
+        await Promise.all( promises );
+
+    } );
+
+    await Promise.all( promises );
+
+}
 
 
 function getVolumeFilter ( filter ) {
