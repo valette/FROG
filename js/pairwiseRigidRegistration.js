@@ -32,12 +32,16 @@ const params = {
         "big/00/corps//19bad/1.3.46.670589.33.1.32963155271087338575.28270001074118335806/1.3.46.670589.33.1.32963155271087338575.28270001074118335806.mhd"
     ],
 
-    registerAll : false
+    registerAll : true,
+    showSlices : true,
+    showBoxes : false,
+    showRegistration : false
 };
 
 const volumes = [];
 const meshes = [];
 let links;
+const boxes = [];
 const loadedFiles = [];
 const shuffleButtons = [];
 let surfActions = [];
@@ -108,7 +112,7 @@ const files = [ 0, 1 ].map( ( i ) => {
     filesContainer.add( new qx.ui.basic.Label( "File " + ( i + 1) ) );
     filesContainer.add( field );
     field.setValue( params.inputFiles[ i ] );
-    field.addListener( "changeValue", addMeshesAndMatch );
+//    field.addListener( "changeValue", addMeshesAndMatch );
     return field;
 
 } );
@@ -206,7 +210,8 @@ async function match( files ) {
     } );
 
     const txt = await desk.FileSystem.readFileAsync( match.outputDirectory + "transform.json" );
-    return JSON.parse( txt );
+    const trans = JSON.parse( txt );
+    return trans.fail ? null : trans;
 
 }
 
@@ -220,9 +225,9 @@ async function update( files ) {
         const promise = match( files );
         await Promise.all( [ 0, 1 ].map( index => addMesh( files[ index ], index ) ) );
         transform = await promise;
-        if ( !transform ) return statusLabel.setValue( "Failed!");
         setMeshesColor();
-        statusLabel.setValue( "Done, " + transform.inliers + " inliers.");
+        statusLabel.setValue( transform ?
+			"Done, " + transform.inliers + " inliers." : "Failed");
         setFinished( true );
 
     } catch( e ) { console.warn( e ); }
@@ -256,10 +261,10 @@ const switchColors = new qx.ui.form.CheckBox( "switch colors" );
 switchColors.addListener("changeValue", setMeshesColor);
 showContainer.add(switchColors);
 
-function setFinished( bool ) {
+function setFinished( b ) {
 
     for ( let button of shuffleButtons )
-        button.setVisibility( bool ? "visible" : "excluded" );
+        button.setVisibility( b ? "visible" : "excluded" );
 
 }
 
@@ -284,11 +289,15 @@ function setMeshesColor() {
                 material.opacity = 0.8;
                 material.side = THREE.DoubleSide;
                 mesh.visible = showMeshes.getValue();
+                mesh.renderOrder = 2000;
 
             }
 
             const slices = group.children[ 2 ];
-            if ( slices ) slices.visible = showSlices.getValue();
+            if ( slices ) {
+				slices.visible = showSlices.getValue();
+				slices.children[ 0 ].renderOrder = -10;
+			}
             const points = group.children[ 1 ];
 
             if ( points ) {
@@ -307,7 +316,7 @@ function setMeshesColor() {
 
     if ( mesh ) {
 
-        if ( transform && showRegistration.getValue() ) {
+        if ( transform && !transform.fail && showRegistration.getValue() ) {
 
             mesh.position.fromArray( transform.translation ).multiplyScalar( -1 );
             mesh.scale.setScalar( 1.0 / transform.scale );
@@ -338,6 +347,7 @@ function setMeshesColor() {
 function updateInliers() {
 
     if ( links ) viewer.removeMesh( links );
+	updateBoxes();
     links = null;
     if ( !transform || !showInliers.getValue() ) return;
     const nInliers = transform.inliers;
@@ -372,12 +382,38 @@ function updateInliers() {
     
     links = new THREE.LineSegments( geometry, material, THREE.LineSegments );
     viewer.addMesh( links, { label : "links" } );
-    
+}
+
+function updateBoxes() {
+
+	for ( let i = 0; i < 2; i++ ) {
+
+		if ( boxes[ i ] ) viewer.removeMesh( boxes[ i ] );
+		boxes[ i ] = null;
+		if ( !transform || !showBoxes.getValue() ) continue;
+		const b = transform[ i ? "bboxB" : "bboxA" ];
+		const geometry = new THREE.BoxGeometry();
+		const material = new THREE.MeshLambertMaterial( { color : "yellow"} );
+		material.opacity = 0.2;
+		material.transparent = true;
+		material.side = THREE.DoubleSide;
+		const box = new THREE.Box3();
+		box.min.fromArray( b.min );
+		box.max.fromArray( b.max );
+		const mesh = new THREE.Mesh( geometry, material );
+		mesh.renderOrder = 200000;
+		box.getCenter( mesh.position );
+		box.getSize( mesh.scale );
+		viewer.addMesh( mesh, { label : "box", parent : meshes[ i ] } );
+		boxes[ i ] = mesh;
+
+	}
+
 }
 
 const showRegistration = new qx.ui.form.CheckBox('Show registration');
 showContainer.add( showRegistration );
-showRegistration.setValue( true );
+showRegistration.setValue( params.showRegistration );
 showRegistration.addListener( "changeValue", setMeshesColor );
 
 const showPoints = new qx.ui.form.CheckBox('Show points');
@@ -387,13 +423,18 @@ showPoints.addListener( "changeValue", setMeshesColor );
 
 const showSlices = new qx.ui.form.CheckBox('Show slices');
 showContainer.add( showSlices );
-showSlices.setValue( false );
+showSlices.setValue( params.showSlices );
 showSlices.addListener( "changeValue", setMeshesColor );
 
 const showInliers = new qx.ui.form.CheckBox('Show inliers');
 showContainer.add( showInliers );
 showInliers.setValue( false );
 showInliers.addListener( "changeValue", setMeshesColor );
+
+const showBoxes = new qx.ui.form.CheckBox('Show boxes');
+showContainer.add( showBoxes );
+showBoxes.setValue( params.showBoxes );
+showBoxes.addListener( "changeValue", setMeshesColor );
 
 const showMeshes = new qx.ui.form.CheckBox('Show meshes');
 showContainer.add( showMeshes );
@@ -422,10 +463,17 @@ function traverse( file ) {
 
 async function afterTraverse() {
 
+    for ( let file of params.inputFiles.slice( 0,2 ) )
+        if ( !volumes.includes( file ) ) volumes.push( file );
+
     console.log( volumes.length + " files" );
+    volumes.sort( ( a, b ) => a.localeCompare( b ) );
     addRandomButton( 0 );
     addRandomButton( 1 );
     setMeshesColor();
+
+	for ( let field of files )
+		field.addListener( "changeValue", addMeshesAndMatch );
 
     if ( desk.auto || !params.registerAll ){
 
@@ -469,8 +517,8 @@ function addRandomButton( index ) {
     shuffleButtons[ index ] = button;
 
     button.addListener("execute", function () {
-
-        files[ index ].setValue( volumes[ Math.floor( rng.random() * volumes.length ) ] );
+        const id = Math.floor( rng.random() * volumes.length );
+        files[ index ].setValue( volumes[ id ] );
 
     });
 
