@@ -32,7 +32,7 @@ const params = {
         "big/00/corps//19bad/1.3.46.670589.33.1.32963155271087338575.28270001074118335806/1.3.46.670589.33.1.32963155271087338575.28270001074118335806.mhd"
     ],
 
-    registerAll : true,
+    registerAll : false,
     showSlices : true,
     showBoxes : false,
     showRegistration : false
@@ -43,6 +43,7 @@ const meshes = [];
 let links;
 const boxes = [];
 const loadedFiles = [];
+const ids = [];
 const shuffleButtons = [];
 let surfActions = [];
 let transform;
@@ -54,34 +55,6 @@ const pane = new qx.ui.splitpane.Pane();
 win.add( pane, { flex : 1 } );
 if ( desk.auto ) qx.core.Init.getApplication().getRoot().add( pane,
     { width : '100%', height : '100%' } );
-
-
-
-function addFileBrowser(index) {
-
-    const fileBrowser = new desk.FileBrowser(null, false);
-    fileBrowser.setFileHandler(function () {}); // disable double click
-    fileBrowser.setWidth(300);
-    fileBrowser.getTree().addListener('changeSelection', function () {
-
-        const files = fileBrowser.getSelectedFiles();
-        if ( !files.length ) return;
-        const fileName = files[0];
-        switch (desk.FileSystem.getFileExtension(fileName)) {
-            case "mhd":
-            case "png":
-            case "jpg":
-                files[ index ].setValue(fileName);
-                break;
-            default : 
-                break;
-        }
-
-    });
-
-    if ( !desk.auto ) tabView.addElement('input ' + ( index + 1 ), fileBrowser );
-
-}
 
 function tweakShader (volume) {
     volume.getSlices().forEach(function ( slice, index ) {
@@ -111,8 +84,6 @@ const files = [ 0, 1 ].map( ( i ) => {
     const field = new desk.FileField( "" );
     filesContainer.add( new qx.ui.basic.Label( "File " + ( i + 1) ) );
     filesContainer.add( field );
-    field.setValue( params.inputFiles[ i ] );
-//    field.addListener( "changeValue", addMeshesAndMatch );
     return field;
 
 } );
@@ -141,10 +112,11 @@ async function addMesh( file, index ) {
     } );
 
     const mesh = new THREE.Group();
-    viewer.addMesh( mesh, {label : "Input " + ( index + 1 ) } );
+    const updateCamera = index == 0;
+    viewer.addMesh( mesh, { label : "Input " + ( index + 1 ), updateCamera } );
 
     await viewer.addFileAsync( meshing.outputDirectory + "/0.vtk",
-        { label : "bones", parent : mesh } );
+        { label : "bones", parent : mesh, updateCamera : index == 0 } );
 
     meshes[ index ] = mesh;
     setMeshesColor();
@@ -167,9 +139,9 @@ async function addMesh( file, index ) {
 
 	}
 
-    viewer.addMesh( imesh, { parent : mesh, label : "points" } );
+    viewer.addMesh( imesh, { parent : mesh, label : "points", updateCamera } );
     const volume = await MPRPromise;
-    viewer.attachVolumeSlices( volume.getSlices(), { parent : mesh } );
+    viewer.attachVolumeSlices( volume.getSlices(), { parent : mesh, updateCamera } );
     viewer.render();
     loadedFiles[ index ] = file;
     if ( index == 0 ) viewer.resetView();
@@ -179,7 +151,8 @@ async function addMesh( file, index ) {
 
 async function addMeshesAndMatch() {
 
-    await update( files.map( f => f.getValue() ) );
+	console.log( ids );
+	await update( files.map( f => f.getValue() ) );
 
 }
 
@@ -220,7 +193,7 @@ async function update( files ) {
     try {
 
         transform = null;
-        setFinished( false );
+		for ( let button of shuffleButtons ) button.setEnabled( false );
         statusLabel.setValue( "Registering..." );
         const promise = match( files );
         await Promise.all( [ 0, 1 ].map( index => addMesh( files[ index ], index ) ) );
@@ -228,7 +201,7 @@ async function update( files ) {
         setMeshesColor();
         statusLabel.setValue( transform ?
 			"Done, " + transform.inliers + " inliers." : "Failed");
-        setFinished( true );
+		for ( let button of shuffleButtons ) button.setEnabled( true );
 
     } catch( e ) { console.warn( e ); }
 
@@ -242,16 +215,40 @@ const viewers = [ 0, 1 ].map( ( index ) => {
     const MPR = new desk.MPRContainer(null, { nbOrientations : 1 } );
     MPR.maximizeViewer(0);
     container.add(MPR, {flex : 1});
-    addFileBrowser( 0 );
+    const fileBrowser = new desk.FileBrowser(null, false);
+    fileBrowser.setFileHandler(function () {}); // disable double click
+    fileBrowser.setWidth(300);
+    fileBrowser.getTree().addListener('changeSelection', function () {
+
+        const selectedFiles = fileBrowser.getSelectedFiles();
+        if ( !selectedFiles.length ) return;
+        const fileName = selectedFiles[0];
+        switch (desk.FileSystem.getFileExtension(fileName)) {
+            case "mhd":
+            case "png":
+            case "jpg":
+                files[ index ].setValue(fileName);
+                break;
+            default :
+                break;
+        }
+
+    });
+
+    if ( !desk.auto ) tabView.addElement('input ' + ( index + 1 ), fileBrowser );
     return MPR;
 
 } );
 
 pane.add( container );
+
 if ( desk.auto ) pane.add( viewer, 2 );
-else { pane.add( tabView, 2 );
+else {
+
+	pane.add( tabView, 2 );
     win.open();
     win.center();
+
 }
 
 const buttonsContainer = new qx.ui.container.Composite();
@@ -260,13 +257,6 @@ viewer.add( buttonsContainer, { left : 5, bottom : 5 } );
 const switchColors = new qx.ui.form.CheckBox( "switch colors" );
 switchColors.addListener("changeValue", setMeshesColor);
 showContainer.add(switchColors);
-
-function setFinished( b ) {
-
-    for ( let button of shuffleButtons )
-        button.setVisibility( b ? "visible" : "excluded" );
-
-}
 
 function setMeshesColor() {
 
@@ -472,13 +462,20 @@ async function afterTraverse() {
     addRandomButton( 1 );
     setMeshesColor();
 
-	for ( let field of files )
-		field.addListener( "changeValue", addMeshesAndMatch );
 
     if ( desk.auto || !params.registerAll ){
 
-        addMeshesAndMatch().catch( console.warn );
-        return;
+		for ( let [ i, field ] of files.entries() ) {
+			field.setValue( params.inputFiles[ i ] );
+			ids[ i ] = volumes.indexOf( params.inputFiles[ i ] );
+		}
+
+        addMeshesAndMatch();
+
+		for ( let field of files )
+			field.addListener( "changeValue", addMeshesAndMatch );
+
+		return;
 
     }
 
@@ -512,15 +509,18 @@ slider.addListener( "changeValue", () => {
 
 function addRandomButton( index ) {
 
-    const button = new qx.ui.form.Button( "New " + ( index + 1 ) );
-    const rng = new desk.Random( index * 1000 );
-    shuffleButtons[ index ] = button;
+	const button = new qx.ui.form.Button( "New " + ( index + 1 ) );
+	const rng = new desk.Random( index * 1000 );
+	shuffleButtons[ index ] = button;
 
-    button.addListener("execute", function () {
-        const id = Math.floor( rng.random() * volumes.length );
-        files[ index ].setValue( volumes[ id ] );
+	button.addListener("execute", function () {
 
-    });
+		let id = ids[ index ];
+		while ( id == ids[ index ] ) id = Math.floor( rng.random() * volumes.length );
+		ids[ index ] = id;
+		files[ index ].setValue( volumes[ id ] );
+
+    } );
 
     buttonsContainer.add( button );
 
