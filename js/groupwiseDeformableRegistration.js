@@ -164,7 +164,7 @@ list.addListener( "drop", e => {
 
 const startButton = new qx.ui.form.Button( 'Start' );
 viewer.add( startButton, { top : 0, left : 300 } );
-await new Promise( resolve => startButton.addListenerOnce( 'execute', resolve ) );
+if ( !desk.auto ) await new Promise( resolve => startButton.addListenerOnce( 'execute', resolve ) );
 
 const places = list.getSelection().map( item => item.getLabel() );
 startButton.destroy();
@@ -243,7 +243,6 @@ const meshes = await async.mapLimit( files, loadVolumeConcurrency,
 
         mesh.userData.id = id;
         mesh.userData.file = file;
-//        anchor.add( mesh );
 
         const i = id % width;
         const j = Math.floor( id / width );
@@ -592,7 +591,7 @@ async function computeRegistration () {
 
         function hashCode ( string ) {
 
-            return string.split("").reduce((a,b) => {a=((a<<5)-a)+b.charCodeAt(0);return a&a},0);
+            return string.split("").reduce((a,b) => {a=((a<<5)-a)+b.charCodeAt(0);return a&a;},0);
 
         }
 
