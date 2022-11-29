@@ -77,6 +77,8 @@ tabView.setSelection( [ tab ] );
 
 const showContainer = new qx.ui.container.Composite();
 showContainer.setLayout( new qx.ui.layout.VBox() );
+showContainer.setBackgroundColor( "white" );
+showContainer.setDecorator( "border-blue" );
 viewer.add( showContainer, { bottom : 5, right : 5 } );
 
 const files = [ 0, 1 ].map( ( i ) => {
@@ -100,7 +102,7 @@ async function addMesh( file, index ) {
 
         viewers[ index ].removeAllVolumes();
         return await viewers[ index ].addVolumeAsync( file );
-        //tweakShader( volume );
+//        tweakShader( volume );
 
     }
 
@@ -127,21 +129,23 @@ async function addMesh( file, index ) {
 	const matrix = new THREE.Matrix4();
 	const material = new THREE.MeshLambertMaterial();
 	const imesh = new THREE.InstancedMesh( sphereGeometry, material, pts.points.length );
-	const origin = new THREE.Vector3().fromArray( pts.origin );
 	const v = new THREE.Vector3();
 
 	for ( let [ i, pt ] of pts.points.entries() ) {
 
-        v.copy( pt ).add( origin );
+        v.copy( pt );
         matrix.makeScale( pt.scale, pt.scale, pt.scale );
         matrix.setPosition( ...v.toArray() );
 		imesh.setMatrixAt( i, matrix );
 
 	}
 
+	imesh.userData.points = pts;
     viewer.addMesh( imesh, { parent : mesh, label : "points", updateCamera } );
     const volume = await MPRPromise;
     viewer.attachVolumeSlices( volume.getSlices(), { parent : mesh, updateCamera } );
+    volume.getSlices()[ 0 ].addListener( "changePosition", updatePointsVisibility );
+    updatePointsVisibility();
     viewer.render();
     loadedFiles[ index ] = file;
     if ( index == 0 ) viewer.resetView();
@@ -258,7 +262,59 @@ const switchColors = new qx.ui.form.CheckBox( "switch colors" );
 switchColors.addListener("changeValue", setMeshesColor);
 showContainer.add(switchColors);
 
+function updatePointsVisibility() {
+
+	for ( let i = 0; i < 2; i++ ) {
+
+		const group = meshes[ i ];
+		if ( !group ) continue;
+		const arr = group.children.filter( m => m?.userData?.points );
+		if (!arr.length ) continue;
+		const mesh = arr[ 0 ];
+		mesh.instanceMatrix.needsUpdate = true;
+		const points = mesh.userData.points;
+
+		let position;
+		const arr2 = group.children.filter( m => m?.userData?.viewerProperties?.volumeSlice );
+
+		if ( pointsInSlices.getValue() && arr2.length ) {
+
+			const slice = arr2[ 0 ].userData.viewerProperties.volumeSlice;
+			position = slice.getPosition();
+
+		}
+
+        let inliers;
+        if ( inlierPoints.getValue() && links ) inliers = links.userData.inliers[ i ];
+		const v = new THREE.Vector3();
+		const matrix = new THREE.Matrix4();
+
+		for ( let [ i, pt ] of points.points.entries() ) {
+
+			v.copy( pt );
+			let scale = pt.scale;
+
+			if ( position != undefined  && ( Math.abs( pt.z - position ) > scale ) )
+				scale = 0;
+
+            if ( inliers && !inliers.has( i ) ) scale = 0;
+
+			matrix.makeScale( scale, scale, scale );
+			matrix.setPosition( ...v.toArray() );
+			mesh.setMatrixAt( i, matrix );
+
+		}
+
+	}
+
+	viewer.render();
+
+}
+
 function setMeshesColor() {
+
+	pointsInSlices.setVisibility( showPoints.getValue() ? "visible" : "hidden" );
+	inlierPoints.setVisibility( showPoints.getValue() ? "visible" : "hidden" );
 
     for ( let i = 0; i < 2; i++ ) {
 
@@ -339,7 +395,7 @@ function updateInliers() {
     if ( links ) viewer.removeMesh( links );
 	updateBoxes();
     links = null;
-    if ( !transform || !showInliers.getValue() ) return;
+    if ( !transform ) return;
     const nInliers = transform.inliers;
     const geometry = new THREE.BufferGeometry();
     const material = new THREE.LineBasicMaterial( { color : 0x000000 });
@@ -356,10 +412,13 @@ function updateInliers() {
     const p2 = new THREE.Vector3();
     const s = new THREE.Vector3();
     const q = new THREE.Quaternion();
+    const inliers = [ new Set(), new Set() ];
 
     for ( let i = 0; i < nInliers; i ++ ) {
 
         const [ point1, point2 ] = transform.allInliers[ i ];
+        inliers[ 0 ].add( point1 );
+        inliers[ 1 ].add( point2 );
         mesh1.getMatrixAt( point1, matrix1 );
         mesh2.getMatrixAt( point2, matrix2 );
         matrix1.decompose( p1, q, s );
@@ -371,6 +430,8 @@ function updateInliers() {
     }
     
     links = new THREE.LineSegments( geometry, material, THREE.LineSegments );
+    links.userData.inliers = inliers;
+    links.visible = showLinks.getValue();
     viewer.addMesh( links, { label : "links" } );
 }
 
@@ -411,15 +472,27 @@ showContainer.add( showPoints );
 showPoints.setValue( false );
 showPoints.addListener( "changeValue", setMeshesColor );
 
+const pointsInSlices = new qx.ui.form.CheckBox('Points in slices');
+showContainer.add( pointsInSlices );
+pointsInSlices.setValue( false );
+pointsInSlices.setVisibility( "hidden" );
+pointsInSlices.addListener( "changeValue", updatePointsVisibility );
+
+const inlierPoints = new qx.ui.form.CheckBox('Inlier points');
+showContainer.add( inlierPoints );
+inlierPoints.setValue( false );
+inlierPoints.setVisibility( "hidden" );
+inlierPoints.addListener( "changeValue", updatePointsVisibility );
+
 const showSlices = new qx.ui.form.CheckBox('Show slices');
 showContainer.add( showSlices );
 showSlices.setValue( params.showSlices );
 showSlices.addListener( "changeValue", setMeshesColor );
 
-const showInliers = new qx.ui.form.CheckBox('Show inliers');
-showContainer.add( showInliers );
-showInliers.setValue( false );
-showInliers.addListener( "changeValue", setMeshesColor );
+const showLinks = new qx.ui.form.CheckBox('Show links');
+showContainer.add( showLinks );
+showLinks.setValue( false );
+showLinks.addListener( "changeValue", setMeshesColor );
 
 const showBoxes = new qx.ui.form.CheckBox('Show boxes');
 showContainer.add( showBoxes );

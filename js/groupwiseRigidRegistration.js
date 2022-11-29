@@ -11,7 +11,7 @@ var dataDir = "big/00";
 var defaultFile = 'data/volumes-01_MHD-200.json';
 //defaultFile = 'data/visceral/10000109_29193.json';
 //defaultFile = 'data/visceral/10000109_187.json';
-defaultFile = 'data/volumes-01_MHD-10.json';
+defaultFile = 'data/volumes-01_MHD-200.json';
 
 const loadDefaultFile = true;
 
