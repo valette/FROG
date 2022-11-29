@@ -5,7 +5,9 @@ var Heap = require ('heap');
 
 var laplaceSolver = {
 	worker : function () {
-		return operative( laplaceSolver, [ 'FROG/lib/heap.js'] );
+	    const heapScript = 'FROG/lib/heap.js';
+	    desk.FileSystem.getFileURL( heapScript ); // statification hack
+		return operative( laplaceSolver, [ heapScript] );
 	},
 
 	laplacianValues : null,
