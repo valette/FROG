@@ -191,8 +191,8 @@ FROG.DeformableGroupwiseRegistration.prototype.execute = async function () {
 
         file.points = points[ index ].points;
         file.extractor = points[ index ].extractor;
-        delete file.extractor[ "status" ];
-        delete file.extractor[ "handle" ];
+        delete file.extractor.status;
+        delete file.extractor.handle;
         file.transform = registration.outputDirectory + "transforms/" + index + '.json';
 
     } );

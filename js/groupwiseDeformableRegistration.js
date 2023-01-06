@@ -5,7 +5,7 @@ const { async, THREE, desk, FROG, qx, visceral, _, ACVD } = window;
 const filter1 = "all"; // registration batch. Can be "all", "women" or "men"
 const filter2 = "all"; // average image computation. Can be "all", "women" or "men" or a volume id
 
-let spacing = 5; // spacing of the output mean image
+let spacing = 3; // spacing of the output mean image
 
 let placesAll = [ // input directories
 
@@ -290,7 +290,7 @@ for ( let mesh of meshes ) {
 }
 
 const container = new qx.ui.container.Composite( new qx.ui.layout.VBox() );
-container.setDecorator('main');
+container.setDecorator('border-blue');
 const container2 = new qx.ui.container.Composite( new qx.ui.layout.VBox() );
 container2.setVisibility( 'excluded' );
 
@@ -679,12 +679,23 @@ async function extractMeshes( output ) {
 
     const groups = {};
 
-    for ( let organ of Object.keys( organs ) ) {
+    Object.keys( organs ).entries().forEach( entry =>  {
 
+        const [ index, organ ] = entry;
         const group = groups[ organ ] = new THREE.Group();
         viewer.addMesh( group, { label : organ } );
+        const box = new qx.ui.form.CheckBox( "Show " + organ );
+        box.setValue( true );
+        viewer.add( box, { left : 5, bottom : 5 + index * 25 } );
 
-    }
+        box.addListener( "changeValue", () => {
+
+            group.visible = box.getValue();
+            viewer.render();
+            
+        } );
+
+    } );
 
     const promises = output.volumes.entries().map( async entry => {
 

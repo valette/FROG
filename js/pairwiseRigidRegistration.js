@@ -69,7 +69,10 @@ const filesContainer = new qx.ui.container.Composite();
 filesContainer.setLayout( new qx.ui.layout.VBox( 5 ) );
 if ( !desk.auto ) tabView.addElement( "files", filesContainer );
 
-const viewer = new desk.SceneContainer();
+const viewer = new desk.SceneContainer( {
+    cameraFront : [ 0, -1, 0 ],
+    cameraUp : [ 0, 0, -1 ]
+});
 const statusLabel = new qx.ui.basic.Label( "..." );
 viewer.add( statusLabel, { left : "40%", bottom : 10 } );
 const tab = tabView.addElement('3D', viewer);
@@ -203,6 +206,7 @@ async function update( files ) {
         await Promise.all( [ 0, 1 ].map( index => addMesh( files[ index ], index ) ) );
         transform = await promise;
         setMeshesColor();
+        updatePointsVisibility();
         statusLabel.setValue( transform ?
 			"Done, " + transform.inliers + " inliers." : "Failed");
 		for ( let button of shuffleButtons ) button.setEnabled( true );
@@ -298,6 +302,7 @@ function updatePointsVisibility() {
 				scale = 0;
 
             if ( inliers && !inliers.has( i ) ) scale = 0;
+			if ( inlierPoints.getValue() && !transform ) scale = 0;
 
 			matrix.makeScale( scale, scale, scale );
 			matrix.setPosition( ...v.toArray() );

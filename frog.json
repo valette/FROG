@@ -462,7 +462,7 @@
 				"js/lib/LSRegistration.js",
 				"js/lib/laplaceSolver.js",
 				"js/lib/TextSpriteHelper.js",
-				"js/lib/vtkOpenSURF.js"
+				"js/lib/FROG.js"
 			]
 		}
 
