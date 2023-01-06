@@ -35,12 +35,15 @@ typedef vector<Match> MatchVect;
 typedef std::tuple<unsigned short, unsigned short, MatchVect* > pairMatches;
 typedef std::array<double, 3> v3;
 
-struct CSVrow {
+struct Point {
 	Descriptor desc;
-	vector<float> meta;
+	float coordinates[3];
+	float scale;
+	float laplacianSign;
+	float response;
 };
 
-typedef vector< CSVrow > CSV;
+typedef vector< Point > CSV;
 
 // reads the keypoint list contained in filename (in CSV format)
 CSV* readCSVGZ(string filename) {
@@ -54,25 +57,32 @@ CSV* readCSVGZ(string filename) {
 
     while(std::getline(file,line)) {
 
-		CSVrow row;
+		Point row;
         std::stringstream  lineStream(line);
         std::string        cell;
-        while(std::getline(lineStream,cell,',') && (int)cell[0] != 13 ) {
+		int count = 0;
 
-			//cout << cell.length() << " : " << (int)cell[0] << endl;
-			if (row.meta.size() < 6) {
+		while(std::getline(lineStream,cell,',') && (int)cell[0] != 13 ) {
 
-				row.meta.push_back(std::stof(cell));
+			float value = std::stof(cell);
 
-			} else {
+			switch( count ) {
 
-				row.desc.push_back(std::stof(cell));
+				case 0 : row.coordinates[ 0 ] = value; break;
+				case 1 : row.coordinates[ 1 ] = value; break;
+				case 2 : row.coordinates[ 2 ] = value; break;
+				case 3 : row.scale = value; break;
+				case 4 : row.laplacianSign = value; break;
+				case 5 : row.response = value; break;
+				default : row.desc.push_back( value );
 
 			}
 
+			count++;
+
         }
 
-		if (row.meta.size() > 0) myCSV->push_back(row);
+		if ( count > 6 ) myCSV->push_back( row );
 
     }
 
@@ -86,13 +96,14 @@ void writeCSV( CSV &csv, const char *fileName) {
 
 	for (auto i = 0; i != csv.size(); i++) {
 
-		CSVrow row = csv[ i ];
+		Point row = csv[ i ];
 
-		for ( auto j = 0; j < row.meta.size(); j++ ) {
-
-			file <<  csv[ i ].meta[ j ] << ",";
-
-		}
+		file <<  csv[ i ].coordinates[ 0 ] << ",";
+		file <<  csv[ i ].coordinates[ 1 ] << ",";
+		file <<  csv[ i ].coordinates[ 2 ] << ",";
+		file <<  csv[ i ].scale << ",";
+		file <<  csv[ i ].laplacianSign << ",";
+		file <<  csv[ i ].response << ",";
 
 		for ( auto j = 0; j < csv[ i ].desc.size(); j++ ) {
 
@@ -129,23 +140,32 @@ CSV* readCSV(string filename) {
 
     while(std::getline(file,line)) {
 
-		CSVrow row;
+		Point row;
 		std::stringstream  lineStream(line);
 		std::string        cell;
+		int count = 0;
+
 		while(std::getline(lineStream,cell,',') && (int)cell[0] != 13 ) {
 
-			if (row.meta.size() < 6) {
+			float value = std::stof(cell);
 
-				row.meta.push_back(std::stof(cell));
+			switch( count ) {
 
-			} else {
+				case 0 : row.coordinates[ 0 ] = value; break;
+				case 1 : row.coordinates[ 1 ] = value; break;
+				case 2 : row.coordinates[ 2 ] = value; break;
+				case 3 : row.scale = value; break;
+				case 4 : row.laplacianSign = value; break;
+				case 5 : row.response = value; break;
+				default : row.desc.push_back( value );
 
-				row.desc.push_back(std::stof(cell));
 			}
+
+			count++;
 
         }
 
-		if (row.meta.size() > 0) myCSV->push_back(row);
+		if ( count > 6 ) myCSV->push_back( row );
 
     }
 
@@ -161,21 +181,21 @@ CSV* readBinary(string filename) {
 
 	while(!feof(file)) {
 
-		CSVrow row;
+		Point row;
 		float valF;
 		int unused;
 		unused = fread(&valF, sizeof(float), 1, file);
-		row.meta.push_back(valF);
+		row.coordinates[ 0 ] = valF;
 		unused = fread(&valF, sizeof(float), 1, file);
-		row.meta.push_back(valF);
+		row.coordinates[ 1 ] = valF;
 		unused = fread(&valF, sizeof(float), 1, file);
-		row.meta.push_back(valF);
+		row.coordinates[ 2 ] = valF;
 		unused = fread(&valF, sizeof(float), 1, file);
-		row.meta.push_back(valF);
+		row.scale = valF;
 		unused = fread(&valF, sizeof(float), 1, file);
-		row.meta.push_back(valF);
+		row.laplacianSign = valF;
 		unused = fread(&valF, sizeof(float), 1, file);
-		row.meta.push_back(valF);
+		row.response = valF;
 		row.desc.resize(48);
 		unused = fread(row.desc.data(), sizeof(float), 48, file);
 		myCSV->push_back(row);
@@ -245,23 +265,23 @@ MatchVect* ComputeMatches(CSV &csv2, CSV &csv1, float threshold, float dist2seco
 		for ( int j = 0; j < end2 ; j++) {
 
 			//Laplacian
-			if (csv1[i].meta[4] != csv2[j].meta[4]) continue;
+			if (csv1[i].laplacianSign != csv2[j].laplacianSign) continue;
 
 			//Scale
-			if ((csv1[i].meta[3]/csv2[j].meta[3] > 1.3) || 
-					(csv2[j].meta[3]/csv1[i].meta[3] > 1.3) )
+			if ((csv1[i].scale/csv2[j].scale > 1.3) || 
+					(csv2[j].scale/csv1[i].scale > 1.3) )
 				continue;
 
 			float dist = norm(csv1[i].desc, csv2[j].desc, csv1[i].desc.size() );
 
 			//Anatomical test (euclidian norm after transform)
 			if (anatVal != 0){
-				float x1 = csv1[i].meta[0];
-				float y1 = csv1[i].meta[1];
-				float z1 = csv1[i].meta[2];
-				float x2 = csv2[j].meta[0];
-				float y2 = csv2[j].meta[1];
-				float z2 = csv2[j].meta[2];
+				float x1 = csv1[i].coordinates[0];
+				float y1 = csv1[i].coordinates[1];
+				float z1 = csv1[i].coordinates[2];
+				float x2 = csv2[j].coordinates[0];
+				float y2 = csv2[j].coordinates[1];
+				float z2 = csv2[j].coordinates[2];
 				
 				float euclNorm = sqrt((x1-x2)*(x1-x2) + (y1-y2)*(y1-y2) + (z1-z2)*(z1-z2));
 
@@ -314,7 +334,7 @@ MatchVect* ComputeMatches(CSV &csv2, CSV &csv1, float threshold, float dist2seco
 
 }
 
-bool compareCSVrow (CSVrow i,CSVrow j) { return (i.meta[5]>j.meta[5]); }
+bool compareCSVrow (Point i,Point j) { return (i.response>j.response); }
 
 int main( int argc, char *argv[] ) {
 
@@ -432,7 +452,7 @@ int main( int argc, char *argv[] ) {
 
 		while(std::getline(file,line)) {
 
-			CSVrow row;
+			Point row;
 		    std::stringstream  lineStream(line);
 		    std::string        cell;
 			std::getline(lineStream,cell,',');
@@ -501,8 +521,8 @@ int main( int argc, char *argv[] ) {
 			float zT = rigids.size() ? rigids[it][2] : 0;
 
 			auto pend = remove_if (mycsv->begin(), mycsv->end(),
-				[zT, zmin, zmax] (CSVrow &val){
-					float z = val.meta[2] + zT;
+				[zT, zmin, zmax] (Point &val){
+					float z = val.coordinates[2] + zT;
 					return z < zmin || z > zmax;
 				});
 
@@ -532,8 +552,8 @@ int main( int argc, char *argv[] ) {
 		#pragma omp for schedule(dynamic)
 		for (auto it = 0 ; it < nb ; ++it) {
 
-			auto rit= remove_if (csvs[it]->begin(), csvs[it]->end(), [sp](CSVrow row){
-				return row.meta[5] < sp;
+			auto rit= remove_if (csvs[it]->begin(), csvs[it]->end(), [sp](Point row){
+				return row.response < sp;
 			});
 
 			csvs[it]->erase(rit, csvs[it]->end());
@@ -664,8 +684,11 @@ int main( int argc, char *argv[] ) {
 
 		for (auto rowIt = 0 ; rowIt < csvs[it]->size() ; rowIt++) {
 
-			vector<float>* data = &csvs[it]->at(rowIt).meta;
-			fwrite(data->data(), sizeof(float), data->size(), file);
+			auto point = &csvs[it]->at(rowIt);
+			fwrite(point->coordinates, sizeof(float), 3, file);
+			fwrite(&point->scale, sizeof(float), 1, file);
+			fwrite(&point->laplacianSign, sizeof(float), 1, file);
+			fwrite(&point->response, sizeof(float), 1, file);
 
 		}
 
