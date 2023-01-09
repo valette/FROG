@@ -43,13 +43,13 @@ struct Point {
 	float response;
 };
 
-typedef vector< Point > CSV;
+typedef vector< Point > Points;
 
 // reads the keypoint list contained in filename (in CSV format)
-CSV* readCSVGZ(string filename) {
+Points* readCSVGZ(string filename) {
 
 	std::string line;
-	CSV* myCSV = new CSV();
+	Points* myCSV = new Points();
 	std::ifstream GZfile( filename, std::ios_base::in | std::ios_base::binary);
 	boost::iostreams::filtering_istream file;
 	file.push(boost::iostreams::gzip_decompressor());
@@ -89,7 +89,7 @@ CSV* readCSVGZ(string filename) {
 	return myCSV;
 }
 
-void writeCSV( CSV &csv, const char *fileName) {
+void writeCSV( Points &csv, const char *fileName) {
 
 	ofstream file;
 	file.open(fileName, std::ofstream::out | std::ofstream::trunc);
@@ -132,10 +132,10 @@ void writeCSV( CSV &csv, const char *fileName) {
 }
 
 // reads the keypoint list contained in filename (in CSV format)
-CSV* readCSV(string filename) {
+Points* readCSV(string filename) {
 
     std::string line;
-	CSV* myCSV = new CSV();
+	Points* myCSV = new Points();
 	ifstream file( filename );
 
     while(std::getline(file,line)) {
@@ -174,10 +174,10 @@ CSV* readCSV(string filename) {
 }
 
 // reads the keypoint list contained in filename (in binary format)
-CSV* readBinary(string filename) {
+Points* readBinary(string filename) {
 
 	FILE* file=fopen(filename.c_str(),"rb");
-	CSV* myCSV = new CSV();
+	Points* myCSV = new Points();
 
 	while(!feof(file)) {
 
@@ -250,7 +250,7 @@ inline float norm(Descriptor& pts1, Descriptor& pts2, int size) {
 
 #endif
 
-MatchVect* ComputeMatches(CSV &csv2, CSV &csv1, float threshold, float dist2second, bool matchAll, float anatVal, bool sym = false) {
+MatchVect* ComputeMatches(Points &csv2, Points &csv1, float threshold, float dist2second, bool matchAll, float anatVal, bool sym = false) {
 
 	MatchVect* matches = new MatchVect();
 	float d1, d2;
@@ -424,7 +424,7 @@ int main( int argc, char *argv[] ) {
 		argumentsIndex += 2;
 	}
 
-	vector< CSV* > csvs;
+	vector< Points* > csvs;
 	fs::directory_iterator end_iter;
 	int i = 0;
 	vector<v3> rigids;
@@ -507,7 +507,7 @@ int main( int argc, char *argv[] ) {
 
 			string ext = filenames[it].substr(filenames[it].find_last_of(".") + 1);
 			//cout << filenames[it] << endl;
-			CSV* mycsv;
+			Points* mycsv;
 			if (  ext == "csv")
 				mycsv = readCSV(filenames[it]);
 			else if ( ext == "bin")
