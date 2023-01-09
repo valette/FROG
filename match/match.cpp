@@ -22,6 +22,7 @@
 #include <boost/iostreams/filter/gzip.hpp>
 
 #include "../tools/pointIdType.h"
+#include "../tools/transformIO.h"
 
 namespace fs = boost::filesystem;
 using namespace std;
@@ -38,6 +39,7 @@ typedef std::array<double, 3> v3;
 struct Point {
 	Descriptor desc;
 	float coordinates[3];
+	float transformedCoordinates[3];
 	float scale;
 	float laplacianSign;
 	float response;
@@ -272,16 +274,14 @@ MatchVect* ComputeMatches(Points &points2, Points &points1, float threshold, flo
 					(points2[j].scale/points1[i].scale > 1.3) )
 				continue;
 
-			float dist = norm(points1[i].desc, points2[j].desc, points1[i].desc.size() );
-
 			//Anatomical test (euclidian norm after transform)
 			if (anatVal != 0){
-				float x1 = points1[i].coordinates[0];
-				float y1 = points1[i].coordinates[1];
-				float z1 = points1[i].coordinates[2];
-				float x2 = points2[j].coordinates[0];
-				float y2 = points2[j].coordinates[1];
-				float z2 = points2[j].coordinates[2];
+				float x1 = points1[i].transformedCoordinates[0];
+				float y1 = points1[i].transformedCoordinates[1];
+				float z1 = points1[i].transformedCoordinates[2];
+				float x2 = points2[j].transformedCoordinates[0];
+				float y2 = points2[j].transformedCoordinates[1];
+				float z2 = points2[j].transformedCoordinates[2];
 				
 				float euclNorm = sqrt((x1-x2)*(x1-x2) + (y1-y2)*(y1-y2) + (z1-z2)*(z1-z2));
 
@@ -290,6 +290,7 @@ MatchVect* ComputeMatches(Points &points2, Points &points1, float threshold, flo
 				}
 			}
 
+			float dist = norm(points1[i].desc, points2[j].desc, points1[i].desc.size() );
 
 			if (matchAll && sqrt(dist) < threshold) {
 				if (sym) {
@@ -359,6 +360,7 @@ int main( int argc, char *argv[] ) {
 	float anatVal = 0.0;
 	bool symFlag = false;
 	int target = -1;
+	char *transformPrefix = 0;
 
 	while (argumentsIndex < argc) {
 
@@ -419,6 +421,10 @@ int main( int argc, char *argv[] ) {
 
 		if (strcmp(key, "-targ") == 0){
 			target = atoi(value);
+		}
+
+		if (strcmp(key, "-transformPrefix") == 0){
+			transformPrefix = value;
 		}
 
 		argumentsIndex += 2;
@@ -507,6 +513,17 @@ int main( int argc, char *argv[] ) {
 
 			string ext = filenames[it].substr(filenames[it].find_last_of(".") + 1);
 			//cout << filenames[it] << endl;
+			vtkGeneralTransform *transform = 0;
+			if ( transformPrefix ) {
+
+				std::string transformFile( transformPrefix );
+				transformFile += std::to_string( it );
+				transformFile += ".json";
+				std::cout << "Reading transform " << transformFile << std::endl;
+				transform = readTransform( transformFile.c_str() );
+
+			}
+
 			Points* points;
 			if (  ext == "csv")
 				points = readCSV(filenames[it]);
@@ -527,6 +544,19 @@ int main( int argc, char *argv[] ) {
 				});
 
 			points->erase (pend, points->end());
+
+			for ( auto point : *points ) {
+
+				if ( transform ) {
+
+					transform->TransformPoint( point.coordinates, point.transformedCoordinates );
+
+				} else {
+					for ( int i = 0; i < 3; i++ )
+						point.transformedCoordinates[ i ] = point.coordinates[ i ];
+				}
+
+			}
 
 			#pragma omp critical
 			cout << "image " << it << " rigid : "

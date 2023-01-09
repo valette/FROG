@@ -18,4 +18,4 @@ endif(USE_SSE_FOR_MATCHING)
 
 include_directories(${Boost_INCLUDE_DIRS})
 ADD_EXECUTABLE( match match.cpp )
-target_link_libraries(match ${Boost_LIBRARIES})
+target_link_libraries(match ${Boost_LIBRARIES} ${VTK_LIBRARIES})
