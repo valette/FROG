@@ -42,6 +42,7 @@ public:
 	char *fixedTransformsDirectory;
 	bool writeSingleFileTransforms; // outputs a single big JSON file for each transform
 
+	std::string transformSubdirectory;
 	void readLandmarks( const char *path );
 
 	ImageGroup() {
@@ -68,6 +69,7 @@ public:
 			useScale = true;
 			writePairs = false;
 			writeSingleFileTransforms = false;
+			transformSubdirectory = std::string( "transforms" );
 		};
 
 protected:

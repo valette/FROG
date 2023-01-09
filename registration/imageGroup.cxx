@@ -1441,15 +1441,15 @@ void ImageGroup::readAndApplyFixedImagesTransforms() {
 
 void ImageGroup::saveTransforms() {
 
-	experimental::filesystem::create_directory( "transforms" );
+	experimental::filesystem::create_directory( this->transformSubdirectory.c_str() );
 
-	// output to .tfm and .json
+	// output to .json
 	#pragma omp parallel for
 	for ( int image1 = this->numberOfFixedImages; image1 < this->images.size(); image1++) {
 
 		vtkGeneralTransform *trans = this->images[ image1 ].allTransforms;
 		ostringstream file;
-		file << "transforms/" << image1 << ".json";
+		file << this->transformSubdirectory << "/" << image1 << ".json";
 		writeFrogJSON( trans, file.str().c_str(), !this->writeSingleFileTransforms );
 
 	}

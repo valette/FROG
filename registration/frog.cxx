@@ -55,6 +55,7 @@ int main( int argc, char *argv[] ) {
 		cout << "-mf file     : path+name of measure.csv file." << endl;
 		cout << "-wp 0/1      : write pairs, distances and probabilities. Default : " << group.writePairs << endl;
 		cout << "-j           : outputs a single big JSON file for each transform. Default : " << group.writeSingleFileTransforms << endl;
+		cout << "-ts subdir   : subdirectory where transforms will be written. Default : " << group.transformSubdirectory << endl;
 
 		return( 1 );
 
@@ -161,6 +162,10 @@ int main( int argc, char *argv[] ) {
 
 		if ( strcmp( key, "-t" ) == 0 ) {
 			group.inlierThreshold = atof( value );
+		}
+
+		if ( strcmp( key, "-ts" ) == 0 ) {
+			group.transformSubdirectory = std::string( value );
 		}
 
 		if ( strcmp( key, "-l" ) == 0 ) {
