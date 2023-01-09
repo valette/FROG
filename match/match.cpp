@@ -250,7 +250,7 @@ inline float norm(Descriptor& pts1, Descriptor& pts2, int size) {
 
 #endif
 
-MatchVect* ComputeMatches(Points &points1, Points &points2, float threshold, float dist2second, bool matchAll, float anatVal, bool sym = false) {
+MatchVect* ComputeMatches(Points &points2, Points &points1, float threshold, float dist2second, bool matchAll, float anatVal, bool sym = false) {
 
 	MatchVect* matches = new MatchVect();
 	float d1, d2;
