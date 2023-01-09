@@ -49,7 +49,7 @@ typedef vector< Point > Points;
 Points* readCSVGZ(string filename) {
 
 	std::string line;
-	Points* myCSV = new Points();
+	Points* points = new Points();
 	std::ifstream GZfile( filename, std::ios_base::in | std::ios_base::binary);
 	boost::iostreams::filtering_istream file;
 	file.push(boost::iostreams::gzip_decompressor());
@@ -82,40 +82,40 @@ Points* readCSVGZ(string filename) {
 
         }
 
-		if ( count > 6 ) myCSV->push_back( row );
+		if ( count > 6 ) points->push_back( row );
 
     }
 
-	return myCSV;
+	return points;
 }
 
-void writeCSV( Points &csv, const char *fileName) {
+void writeCSV( Points &points, const char *fileName) {
 
 	ofstream file;
 	file.open(fileName, std::ofstream::out | std::ofstream::trunc);
 
-	for (auto i = 0; i != csv.size(); i++) {
+	for (auto i = 0; i != points.size(); i++) {
 
-		Point row = csv[ i ];
+		Point row = points[ i ];
 
-		file <<  csv[ i ].coordinates[ 0 ] << ",";
-		file <<  csv[ i ].coordinates[ 1 ] << ",";
-		file <<  csv[ i ].coordinates[ 2 ] << ",";
-		file <<  csv[ i ].scale << ",";
-		file <<  csv[ i ].laplacianSign << ",";
-		file <<  csv[ i ].response << ",";
+		file <<  points[ i ].coordinates[ 0 ] << ",";
+		file <<  points[ i ].coordinates[ 1 ] << ",";
+		file <<  points[ i ].coordinates[ 2 ] << ",";
+		file <<  points[ i ].scale << ",";
+		file <<  points[ i ].laplacianSign << ",";
+		file <<  points[ i ].response << ",";
 
-		for ( auto j = 0; j < csv[ i ].desc.size(); j++ ) {
+		for ( auto j = 0; j < points[ i ].desc.size(); j++ ) {
 
-			file <<  csv[ i ].desc[ j ];
+			file <<  points[ i ].desc[ j ];
 
-			if ( j < csv[ i ].desc.size() - 1 ) {
+			if ( j < points[ i ].desc.size() - 1 ) {
 
 				file << ",";
 
 			} else {
 
-				if ( i < csv.size() ) {
+				if ( i < points.size() ) {
 
 					file << std::endl;
 
@@ -135,7 +135,7 @@ void writeCSV( Points &csv, const char *fileName) {
 Points* readCSV(string filename) {
 
     std::string line;
-	Points* myCSV = new Points();
+	Points* points = new Points();
 	ifstream file( filename );
 
     while(std::getline(file,line)) {
@@ -165,11 +165,11 @@ Points* readCSV(string filename) {
 
         }
 
-		if ( count > 6 ) myCSV->push_back( row );
+		if ( count > 6 ) points->push_back( row );
 
     }
 
-	return myCSV;
+	return points;
 
 }
 
@@ -177,7 +177,7 @@ Points* readCSV(string filename) {
 Points* readBinary(string filename) {
 
 	FILE* file=fopen(filename.c_str(),"rb");
-	Points* myCSV = new Points();
+	Points* points = new Points();
 
 	while(!feof(file)) {
 
@@ -198,11 +198,11 @@ Points* readBinary(string filename) {
 		row.response = valF;
 		row.desc.resize(48);
 		unused = fread(row.desc.data(), sizeof(float), 48, file);
-		myCSV->push_back(row);
+		points->push_back(row);
 
 	}
 
-	return myCSV;
+	return points;
 }
 
 
@@ -250,38 +250,38 @@ inline float norm(Descriptor& pts1, Descriptor& pts2, int size) {
 
 #endif
 
-MatchVect* ComputeMatches(Points &csv2, Points &csv1, float threshold, float dist2second, bool matchAll, float anatVal, bool sym = false) {
+MatchVect* ComputeMatches(Points &points1, Points &points2, float threshold, float dist2second, bool matchAll, float anatVal, bool sym = false) {
 
 	MatchVect* matches = new MatchVect();
 	float d1, d2;
 	int match = 0;
-	int end1 = csv1.size();
+	int end1 = points1.size();
 
 	for (int i = 0; i < end1 ; i++) {
 
 		d1 = d2 = FLT_MAX;
-		int end2 = csv2.size();
+		int end2 = points2.size();
 
 		for ( int j = 0; j < end2 ; j++) {
 
 			//Laplacian
-			if (csv1[i].laplacianSign != csv2[j].laplacianSign) continue;
+			if (points1[i].laplacianSign != points2[j].laplacianSign) continue;
 
 			//Scale
-			if ((csv1[i].scale/csv2[j].scale > 1.3) || 
-					(csv2[j].scale/csv1[i].scale > 1.3) )
+			if ((points1[i].scale/points2[j].scale > 1.3) || 
+					(points2[j].scale/points1[i].scale > 1.3) )
 				continue;
 
-			float dist = norm(csv1[i].desc, csv2[j].desc, csv1[i].desc.size() );
+			float dist = norm(points1[i].desc, points2[j].desc, points1[i].desc.size() );
 
 			//Anatomical test (euclidian norm after transform)
 			if (anatVal != 0){
-				float x1 = csv1[i].coordinates[0];
-				float y1 = csv1[i].coordinates[1];
-				float z1 = csv1[i].coordinates[2];
-				float x2 = csv2[j].coordinates[0];
-				float y2 = csv2[j].coordinates[1];
-				float z2 = csv2[j].coordinates[2];
+				float x1 = points1[i].coordinates[0];
+				float y1 = points1[i].coordinates[1];
+				float z1 = points1[i].coordinates[2];
+				float x2 = points2[j].coordinates[0];
+				float y2 = points2[j].coordinates[1];
+				float z2 = points2[j].coordinates[2];
 				
 				float euclNorm = sqrt((x1-x2)*(x1-x2) + (y1-y2)*(y1-y2) + (z1-z2)*(z1-z2));
 
@@ -424,7 +424,7 @@ int main( int argc, char *argv[] ) {
 		argumentsIndex += 2;
 	}
 
-	vector< Points* > csvs;
+	vector< Points* > allPoints;
 	fs::directory_iterator end_iter;
 	int i = 0;
 	vector<v3> rigids;
@@ -497,9 +497,9 @@ int main( int argc, char *argv[] ) {
 	if (filenames.size() > N) filenames.resize(N);
 	omp_set_num_threads( nt );
 	int nb = filenames.size();
-	csvs.resize(nb);
+	allPoints.resize(nb);
 
-	#pragma omp parallel shared(filenames, csvs, cout)
+	#pragma omp parallel shared(filenames, allPoints, cout)
 	{
 		//Full list	
 		#pragma omp for schedule(dynamic)
@@ -507,33 +507,33 @@ int main( int argc, char *argv[] ) {
 
 			string ext = filenames[it].substr(filenames[it].find_last_of(".") + 1);
 			//cout << filenames[it] << endl;
-			Points* mycsv;
+			Points* points;
 			if (  ext == "csv")
-				mycsv = readCSV(filenames[it]);
+				points = readCSV(filenames[it]);
 			else if ( ext == "bin")
-				mycsv = readBinary(filenames[it]);
+				points = readBinary(filenames[it]);
 			else if ( ext == "gz")
-				mycsv = readCSVGZ(filenames[it]);
+				points = readCSVGZ(filenames[it]);
 			else {
 				cerr << "Bad file format : " <<  ext << endl;
 			}
 
 			float zT = rigids.size() ? rigids[it][2] : 0;
 
-			auto pend = remove_if (mycsv->begin(), mycsv->end(),
+			auto pend = remove_if (points->begin(), points->end(),
 				[zT, zmin, zmax] (Point &val){
 					float z = val.coordinates[2] + zT;
 					return z < zmin || z > zmax;
 				});
 
-			mycsv->erase (pend, mycsv->end());
+			points->erase (pend, points->end());
 
 			#pragma omp critical
 			cout << "image " << it << " rigid : "
 				<< rigids[it][0] << ", " << rigids[it][1] << ", " << rigids[it][2]
-				<<  " before : " << mycsv->size() << " points, after : " << mycsv->size() << endl << flush;
+				<<  " before : " << points->size() << " points, after : " << points->size() << endl << flush;
 
-			csvs[it] = mycsv;
+			allPoints[it] = points;
 
 		}
 
@@ -542,36 +542,36 @@ int main( int argc, char *argv[] ) {
 	end = std::chrono::system_clock::now();
 	cout << " : " << std::chrono::duration<float>(end-start).count() << "s" << endl;
 	start = end;
-	cout << csvs[ 0 ][ 0 ][ 0 ].desc.size() << " values per descriptor" << endl;
+	cout << allPoints[ 0 ][ 0 ][ 0 ].desc.size() << " values per descriptor" << endl;
 	cout << "Sorting and pruning..." << endl;
-	nb = csvs.size();
+	nb = allPoints.size();
 
-	#pragma omp parallel shared(filenames, csvs)
+	#pragma omp parallel shared(filenames, allPoints)
 	{
 
 		#pragma omp for schedule(dynamic)
 		for (auto it = 0 ; it < nb ; ++it) {
 
-			auto rit= remove_if (csvs[it]->begin(), csvs[it]->end(), [sp](Point row){
+			auto rit= remove_if (allPoints[it]->begin(), allPoints[it]->end(), [sp](Point row){
 				return row.response < sp;
 			});
 
-			csvs[it]->erase(rit, csvs[it]->end());
+			allPoints[it]->erase(rit, allPoints[it]->end());
 	
 
-			if ( csvs[it]->size() > np) {
-				partial_sort(csvs[it]->begin(), csvs[it]->begin()+np, csvs[it]->end(), compareCSVrow);
-				csvs[it]->resize(np);
+			if ( allPoints[it]->size() > np) {
+				partial_sort(allPoints[it]->begin(), allPoints[it]->begin()+np, allPoints[it]->end(), compareCSVrow);
+				allPoints[it]->resize(np);
 			} /*else {
-				sort(csvs[it]->begin(), csvs[it]->end(), compareCSVrow);
+				sort(allPoints[it]->begin(), allPoints[it]->end(), compareCSVrow);
 			}*/
-			cout << ". ("  << csvs[it]->size() << ")"<< flush;
+			cout << ". ("  << allPoints[it]->size() << ")"<< flush;
 
 			if ( writePoints ) {
 				std::stringstream outfilename;
 				outfilename << "points" << it << ".csv";
 				cout << " writing " << outfilename.str() << endl;
-				writeCSV( *csvs[it], outfilename.str().c_str() );
+				writeCSV( *allPoints[it], outfilename.str().c_str() );
 			}
 
 		}
@@ -585,13 +585,13 @@ int main( int argc, char *argv[] ) {
 	int sum = 0;
 
 	vector< pair<int, int> > indices;
-	for (int i = 0 ; i < csvs.size()-1 ; i++) {
+	for (int i = 0 ; i < allPoints.size()-1 ; i++) {
 		if (target >= 0){
 			if (i != target ){
 				indices.push_back( make_pair(i, target) );
 			}
 		} else {
-			for (int j = i+1 ; j < csvs.size() ; j++) {
+			for (int j = i+1 ; j < allPoints.size() ; j++) {
 				indices.push_back( make_pair(i, j) );
 			}
 		}	
@@ -605,13 +605,13 @@ int main( int argc, char *argv[] ) {
 	}
 
 	cout << "Pairing... " << endl;
-	#pragma omp parallel shared(csvs, pairs)
+	#pragma omp parallel shared(allPoints, pairs)
 	{
 		#pragma omp for reduction(+:sum) schedule(dynamic)
 		for (int it = 0 ; it < indices.size() ; it++) {
-			MatchVect* matches = ComputeMatches(*csvs[ indices[it].first ], *csvs[ indices[it].second ], dist, dist2second, matchAll, anatVal);
+			MatchVect* matches = ComputeMatches(*allPoints[ indices[it].first ], *allPoints[ indices[it].second ], dist, dist2second, matchAll, anatVal);
             if (symFlag){
-                MatchVect* matchesSym = ComputeMatches(*csvs[ indices[it].second ], *csvs[ indices[it].first ], dist, dist2second, matchAll, anatVal, true);
+                MatchVect* matchesSym = ComputeMatches(*allPoints[ indices[it].second ], *allPoints[ indices[it].first ], dist, dist2second, matchAll, anatVal, true);
                 matches->insert(matches->end(), matchesSym->begin(), matchesSym->end());
             }
 			#pragma omp critical
@@ -654,7 +654,7 @@ int main( int argc, char *argv[] ) {
 	unsigned short nbAcq = filenames.size();
 	fwrite(&nbAcq, sizeof(unsigned short), 1, file);
 
-	for (auto it = 0 ; it < csvs.size() ; it++) {
+	for (auto it = 0 ; it < allPoints.size() ; it++) {
 
 		// Write Filename
 		size_t found = filenames[it].find_last_of("/\\");
@@ -678,13 +678,13 @@ int main( int argc, char *argv[] ) {
 		fwrite(tmp.data(), sizeof(double), 3, file);
 
 		// Write Points
-		pointIdType nbPoints = csvs[it]->size();
+		pointIdType nbPoints = allPoints[it]->size();
 
 		fwrite(&nbPoints, sizeof(pointIdType), 1, file);
 
-		for (auto rowIt = 0 ; rowIt < csvs[it]->size() ; rowIt++) {
+		for (auto rowIt = 0 ; rowIt < allPoints[it]->size() ; rowIt++) {
 
-			auto point = &csvs[it]->at(rowIt);
+			auto point = &allPoints[it]->at(rowIt);
 			fwrite(point->coordinates, sizeof(float), 3, file);
 			fwrite(&point->scale, sizeof(float), 1, file);
 			fwrite(&point->laplacianSign, sizeof(float), 1, file);
