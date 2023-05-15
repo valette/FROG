@@ -1095,17 +1095,9 @@ void ImageGroup::setupStats() {
 	// add samples to statistics
 	for ( auto image = this->images.begin(); image != this->images.end(); image++ ) {
 
-		Stats *stats = &image->stats;
-
-		for ( auto point = image->points.begin(); point != image->points.end(); point++ ) {
-
-			for ( auto link = point->links.begin(); link != point->links.end(); link++ ) {
-
-				stats->addSlot();
-
-			}
-
-		}
+		for ( auto point : image->points )
+			for ( auto link : point.links )
+				image->stats.addSlot();
 
 	}
 
