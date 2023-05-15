@@ -884,11 +884,11 @@ void ImageGroup::writeLinksDistances() {
 			auto pointA = &image.points[ p1 ];
 			float *pA = pointA->xyz2;
 
-			for ( auto link = pointA->links.begin(), endL = pointA->links.end(); link != endL; link++ ) {
+			for ( auto link : pointA->links ) {
 
-				int i2 = link->image;
+				int i2 = link.image;
 				Image *image2 = &this->images[ i2 ];
-				int p2 = link->point;
+				int p2 = link.point;
 				Point *pointB = &image2->points[ p2 ];
 				float *pB = pointB->xyz2;
 				float dist = 0;
