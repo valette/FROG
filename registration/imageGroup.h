@@ -5,6 +5,7 @@
 
 #include "image.h"
 #include "stats.h"
+#include "../vtkOpenSURF3D/picojson.h"
 
 class ImageGroup {
 
@@ -133,4 +134,5 @@ protected:
 
 	void readAndApplyFixedImagesTransforms();
 
+	picojson::object stats; // to log stats
 };

@@ -21,7 +21,6 @@
 #include <vtkMatrixToLinearTransform.h>
 #include <vtkPoints.h>
 
-#include "../vtkOpenSURF3D/picojson.h"
 #include "../tools/transformIO.h"
 
 #include "imageGroup.h"
@@ -164,6 +163,10 @@ void ImageGroup::run() {
 	this->saveLandmarkDistances();
 	this->saveTransformedLandmarks();
 	if ( this->writePairs ) this->writeLinksDistances();
+	std::fstream fs;
+	fs.open( "bbox.json", fstream::out | fstream::trunc );
+	fs << picojson::value( this->stats ).serialize();
+	fs.close();
 
 }
 
@@ -950,14 +953,14 @@ void ImageGroup::countInliers() {
 		Image &image = this->images[ image1 ];
 		Stats *statsA = &image.stats;
 
-		for ( auto pointA = image.points.begin(), end = image.points.end(); pointA != end; pointA++ ) {
+		for ( auto pointA : image.points ) {
 
-			float *pA = pointA->xyz2;
+			float *pA = pointA.xyz2;
 
-			for ( auto link = pointA->links.begin(), endL = pointA->links.end(); link != endL; link++ ) {
+			for ( auto link : pointA.links ) {
 
-				Image *image2 = &this->images[ link->image ];
-				Point *pointB = &image2->points[ link->point ];
+				Image *image2 = &this->images[ link.image ];
+				Point *pointB = &image2->points[ link.point ];
 				float *pB = pointB->xyz2;
 				float dist = 0;
 
@@ -990,6 +993,10 @@ void ImageGroup::countInliers() {
 	cout << nInliers << " inliers" << endl;
 	cout << nOutliers << " outliers" << endl;
 	cout << "Outlier ratio (%): " << ( float ) 100 * nOutliers / nPairs << endl;
+	this->stats[ "halfPairs" ] = picojson::value( (double) nPairs );
+	this->stats[ "inliers" ] = picojson::value( (double) nInliers );
+	this->stats[ "outliers" ] = picojson::value( (double) nOutliers );
+	this->stats[ "outlierRatio" ] = picojson::value( (double) nOutliers / nPairs );
 
 }
 
@@ -1279,6 +1286,7 @@ void ImageGroup::saveLandmarkDistances() {
 	if ( !this->landmarks.size() ) return;
 	std::fstream fs;
 	fs.open( "distances.txt", fstream::out | fstream::trunc );
+	picojson::object distances;
 
 	for ( auto iter = this->landmarks.begin(); iter != landmarks.end(); iter++) {
 
@@ -1476,14 +1484,21 @@ void ImageGroup::saveMeasures( const char *file ) {
 
 void ImageGroup::saveBoundingBox() {
 
-	fstream fs;
-	fs.open( "bbox.json", fstream::out | fstream::trunc );
 	float box[ 6 ];
+	picojson::array min, max;
 	this->getBoundingBox( box, true );
-	fs << "{ \"bbox\" : [ [";
-	fs << box[ 0 ] << "," << box [ 2 ] << "," << box [ 4 ] << "], [";
-	fs << box[ 1 ] << "," << box [ 3 ] << "," << box [ 5 ] << "] ] }";
-	fs.close();
+
+	for ( int i = 0; i < 3; i++ ) {
+
+		min.push_back( picojson::value( box[ 2 * i ] ) );
+		max.push_back( picojson::value( box[ 1 + 2 * i ] ) );
+
+	}
+
+	picojson::array bbox;
+	bbox.push_back( picojson::value( min ) );
+	bbox.push_back( picojson::value( max ) );
+	this->stats[ "bbox" ] = picojson::value( bbox );
 
 }
 
