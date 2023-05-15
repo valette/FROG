@@ -28,6 +28,7 @@ frogParse.add_argument( '-il', dest = 'invertLandmarks', help = 'revert landmark
 frogParse.add_argument( '-wp', dest = 'writePairs', help = 'write list of pairs to file', action="store_true" )
 matchParser = parser.add_argument_group('Match options')
 matchParser.add_argument( '-md', dest = 'matchDistance', type = float, default = 10000000000, help = 'maximum descriptor distance' )
+matchParser.add_argument( '-d2', dest = 'ratio', type = float, default = 1, help = 'maximum second match distance ratio' )
 
 SURFParser = parser.add_argument_group('SURF3D options')
 SURFParser.add_argument( '-m', dest = 'masks', help = 'path to masks' )
@@ -181,7 +182,7 @@ volumes = open( volumesList, "w" )
 volumes.write( "\n".join( keypointFiles ) )
 volumes.close()
 matchBin = join( frogPath, "match" )
-matchCmd = " ".join( [ matchBin, volumesList, "-o", pairsFile, "-d", str( args.matchDistance ), "-np", str( args.numberOfPoints ) ] )
+matchCmd = " ".join( [ matchBin, volumesList, "-o", pairsFile, "-d", str( args.matchDistance ), "-np", str( args.numberOfPoints ), "-d2", str( args.ratio) ] )
 execute( matchCmd )
 
 #### register
