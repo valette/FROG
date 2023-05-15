@@ -1018,14 +1018,14 @@ double ImageGroup::updateLinearTransforms() {
 		Image &image = this->images[ image1 ];
 		Stats *statsA = &image.stats;
 
-		for ( auto pointA = image.points.begin(), end = image.points.end(); pointA != end; pointA++ ) {
+		for ( auto pointA : image.points ) {
 
-			float *pA = pointA->xyz2;
+			float *pA = pointA.xyz2;
 
-			for ( auto link = pointA->links.begin(), endL = pointA->links.end(); link != endL; link++ ) {
+			for ( auto link : pointA.links ) {
 
-				Image *image2 = &this->images[ link->image ];
-				Point *pointB = &image2->points[ link->point ];
+				Image *image2 = &this->images[ link.image ];
+				Point *pointB = &image2->points[ link.point ];
 				float *pB = pointB->xyz2;
 				float dist = 0;
 
