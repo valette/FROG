@@ -280,18 +280,18 @@ double ImageGroup::updateDeformableTransforms( const float alpha ) {
 		for ( int i = 0; i < nValues; i++ ) gradient[ i ] = 0;
 		Stats *statsA = &image.stats;
 
-		for ( auto point = image.points.begin(), end = image.points.end(); point != end; point++ ) {
+		for ( auto point : image.points ) {
 
-			const float *pos = point->xyz;
-			const float *pA = point->xyz2;
+			const float *pos = point.xyz;
+			const float *pA = point.xyz2;
 			float sWeight = 0;
 			float sDisp[ 3 ] = { 0, 0, 0 };
 			// compute point displacement
 
-			for ( auto link = point->links.begin(), endL = point->links.end(); link != endL; link++ ) {
+			for ( auto link : point.links ) {
 
-				Image *image2 = &this->images[ link->image ];
-				Point *pointB = &image2->points[ link->point ];
+				Image *image2 = &this->images[ link.image ];
+				Point *pointB = &image2->points[ link.point ];
 				float *pB = pointB->xyz2;
 				float dist = 0;
 
@@ -505,13 +505,13 @@ void ImageGroup::updateStats() {
 		Stats *stats = &image->stats;
 		stats->reset();
 
-		for ( auto point = image->points.begin(), end = image->points.end(); point != end; point++ ) {
+		for ( auto point : image->points ) {
 
-			const float *pA = point->xyz2;
-			for ( auto link = point->links.begin(), endL = point->links.end(); link != endL; link++ ) {
+			const float *pA = point.xyz2;
+			for ( auto link : point.links ) {
 
-				Image *image2 = &this->images[ link->image ];
-				Point *pointB = &image2->points[ link->point ];
+				Image *image2 = &this->images[ link.image ];
+				Point *pointB = &image2->points[ link.point ];
 				float *pB = pointB->xyz2;
 				float dist2 = 0;
 
@@ -614,17 +614,17 @@ void ImageGroup::RANSAC( int imageId ) {
 	trans->SetTargetLandmarks( target );
 	float maxDistance2 = pow( this->RANSACInlierDistance, 2 );
 
-	for ( auto pointA = pts.begin(), end = pts.end(); pointA != end; pointA++ ) {
+	for ( auto pointA : pts ) {
 
-		transform->TransformPoint( pointA->xyz, transformed );
+		transform->TransformPoint( pointA.xyz, transformed );
 
-		for ( auto link = pointA->links.begin(), endL = pointA->links.end(); link != endL; link++ ) {
+		for ( auto link : pointA.links ) {
 
-			Image *image2 = &this->images[ link->image ];
-			Point *pointB = &image2->points[ link->point ];
+			Image *image2 = &this->images[ link.image ];
+			Point *pointB = &image2->points[ link.point ];
 			float *pB = pointB->xyz2;
 			if ( vtkMath::Distance2BetweenPoints( transformed, pB ) < maxDistance2 ) {
-				source->InsertNextPoint( pointA->xyz );
+				source->InsertNextPoint( pointA.xyz );
 				target->InsertNextPoint( pB );
 			}
 
@@ -697,14 +697,14 @@ ImageGroup::RANSACResult ImageGroup::RANSACBatch( int imageId, int nIterations, 
 		int nInliers = 0;
 		float transformed[ 3 ];
 
-		for ( auto pointA = pts.begin(), end = pts.end(); pointA != end; pointA++ ) {
+		for ( auto pointA : pts ) {
 
-			trans->TransformPoint( pointA->xyz, transformed );
+			trans->TransformPoint( pointA.xyz, transformed );
 
-			for ( auto link = pointA->links.begin(), endL = pointA->links.end(); link != endL; link++ ) {
+			for ( auto link : pointA.links ) {
 
-				Image *image2 = &this->images[ link->image ];
-				Point *pointB = &image2->points[ link->point ];
+				Image *image2 = &this->images[ link.image ];
+				Point *pointB = &image2->points[ link.point ];
 				float *pB = pointB->xyz2;
 				if ( vtkMath::Distance2BetweenPoints( transformed, pB ) < maxDistance2 )
 					nInliers++;
