@@ -280,7 +280,7 @@ double ImageGroup::updateDeformableTransforms( const float alpha ) {
 		for ( int i = 0; i < nValues; i++ ) gradient[ i ] = 0;
 		Stats *statsA = &image.stats;
 
-		for ( auto point : image.points ) {
+		for ( auto const &point : image.points ) {
 
 			const float *pos = point.xyz;
 			const float *pA = point.xyz2;
@@ -288,7 +288,7 @@ double ImageGroup::updateDeformableTransforms( const float alpha ) {
 			float sDisp[ 3 ] = { 0, 0, 0 };
 			// compute point displacement
 
-			for ( auto link : point.links ) {
+			for ( auto const &link : point.links ) {
 
 				Image *image2 = &this->images[ link.image ];
 				Point *pointB = &image2->points[ link.point ];
@@ -505,10 +505,10 @@ void ImageGroup::updateStats() {
 		Stats *stats = &image->stats;
 		stats->reset();
 
-		for ( auto point : image->points ) {
+		for ( auto const &point : image->points ) {
 
 			const float *pA = point.xyz2;
-			for ( auto link : point.links ) {
+			for ( auto const &link : point.links ) {
 
 				Image *image2 = &this->images[ link.image ];
 				Point *pointB = &image2->points[ link.point ];
@@ -614,11 +614,11 @@ void ImageGroup::RANSAC( int imageId ) {
 	trans->SetTargetLandmarks( target );
 	float maxDistance2 = pow( this->RANSACInlierDistance, 2 );
 
-	for ( auto pointA : pts ) {
+	for ( auto const &pointA : pts ) {
 
 		transform->TransformPoint( pointA.xyz, transformed );
 
-		for ( auto link : pointA.links ) {
+		for ( auto const &link : pointA.links ) {
 
 			Image *image2 = &this->images[ link.image ];
 			Point *pointB = &image2->points[ link.point ];
@@ -697,11 +697,11 @@ ImageGroup::RANSACResult ImageGroup::RANSACBatch( int imageId, int nIterations, 
 		int nInliers = 0;
 		float transformed[ 3 ];
 
-		for ( auto pointA : pts ) {
+		for ( auto const &pointA : pts ) {
 
 			trans->TransformPoint( pointA.xyz, transformed );
 
-			for ( auto link : pointA.links ) {
+			for ( auto const &link : pointA.links ) {
 
 				Image *image2 = &this->images[ link.image ];
 				Point *pointB = &image2->points[ link.point ];
@@ -884,7 +884,7 @@ void ImageGroup::writeLinksDistances() {
 			auto pointA = &image.points[ p1 ];
 			float *pA = pointA->xyz2;
 
-			for ( auto link : pointA->links ) {
+			for ( auto const &link : pointA->links ) {
 
 				int i2 = link.image;
 				Image *image2 = &this->images[ i2 ];
@@ -953,11 +953,11 @@ void ImageGroup::countInliers() {
 		Image &image = this->images[ image1 ];
 		Stats *statsA = &image.stats;
 
-		for ( auto pointA : image.points ) {
+		for ( auto const &pointA : image.points ) {
 
-			float *pA = pointA.xyz2;
+			const float *pA = pointA.xyz2;
 
-			for ( auto link : pointA.links ) {
+			for ( auto const &link : pointA.links ) {
 
 				Image *image2 = &this->images[ link.image ];
 				Point *pointB = &image2->points[ link.point ];
@@ -1018,11 +1018,11 @@ double ImageGroup::updateLinearTransforms() {
 		Image &image = this->images[ image1 ];
 		Stats *statsA = &image.stats;
 
-		for ( auto pointA : image.points ) {
+		for ( auto const &pointA : image.points ) {
 
-			float *pA = pointA.xyz2;
+			const float *pA = pointA.xyz2;
 
-			for ( auto link : pointA.links ) {
+			for ( auto const &link : pointA.links ) {
 
 				Image *image2 = &this->images[ link.image ];
 				Point *pointB = &image2->points[ link.point ];
@@ -1093,13 +1093,10 @@ double ImageGroup::updateLinearTransforms() {
 void ImageGroup::setupStats() {
 
 	// add samples to statistics
-	for ( auto image = this->images.begin(); image != this->images.end(); image++ ) {
-
-		for ( auto point : image->points )
-			for ( auto link : point.links )
-				image->stats.addSlot();
-
-	}
+	for ( auto &image : this->images )
+		for ( auto const &point : image.points )
+			for ( auto const &link : point.links )
+				image.stats.addSlot();
 
 }
 
