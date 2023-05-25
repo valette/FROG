@@ -293,16 +293,7 @@ double ImageGroup::updateDeformableTransforms( const float alpha ) {
 				Image *image2 = &this->images[ link.image ];
 				Point *pointB = &image2->points[ link.point ];
 				float *pB = pointB->xyz2;
-				float dist = 0;
-
-				for ( int k = 0; k < 3; k++ ) {
-
-					float diff = pB[ k ] - pA[ k ];
-					dist += diff * diff;
-
-				}
-
-				dist = sqrt( dist );
+				float dist = sqrt( vtkMath::Distance2BetweenPoints( pA, pB ) );
 				float probA = statsA->getInlierProbability( dist );
 				float probB = image2->stats.getInlierProbability( dist );
 				float weight = min( probA, probB );
@@ -513,15 +504,7 @@ void ImageGroup::updateStats() {
 				Image *image2 = &this->images[ link.image ];
 				Point *pointB = &image2->points[ link.point ];
 				float *pB = pointB->xyz2;
-				float dist2 = 0;
-
-				for ( int k = 0; k < 3; k++ ) {
-
-					float diff = pB[ k ] - pA[ k ];
-					dist2 += diff * diff;
-
-				}
-
+				float dist2 = vtkMath::Distance2BetweenPoints( pA, pB );
 				stats->addSample( sqrt( dist2 ) );
 
 			}
@@ -891,16 +874,7 @@ void ImageGroup::writeLinksDistances() {
 				int p2 = link.point;
 				Point *pointB = &image2->points[ p2 ];
 				float *pB = pointB->xyz2;
-				float dist = 0;
-
-				for ( int k = 0; k < 3; k++ ) {
-
-					float diff = pB[ k ] - pA[ k ];
-					dist += diff * diff;
-
-				}
-
-				dist = sqrt( dist );
+				float dist = sqrt( vtkMath::Distance2BetweenPoints( pA, pB ) );
 				vector< float > pair;
 				pair.push_back( i1 );
 				pair.push_back( p1 );
@@ -962,16 +936,7 @@ void ImageGroup::countInliers() {
 				Image *image2 = &this->images[ link.image ];
 				Point *pointB = &image2->points[ link.point ];
 				float *pB = pointB->xyz2;
-				float dist = 0;
-
-				for ( int k = 0; k < 3; k++ ) {
-
-					float diff = pB[ k ] - pA[ k ];
-					dist += diff * diff;
-
-				}
-
-				dist = sqrt( dist );
+				float dist = sqrt( vtkMath::Distance2BetweenPoints( pA, pB ) );
 				float probA = statsA->getInlierProbability( dist );
 				float probB = image2->stats.getInlierProbability( dist );
 				float weight = min( probA, probB );
