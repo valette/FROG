@@ -1,6 +1,6 @@
 #include <algorithm>
 #include <assert.h> 
-#include <experimental/filesystem>
+#include <filesystem>
 #include <iostream>
 #include <numeric>
 #include <omp.h>
@@ -1069,7 +1069,7 @@ void ImageGroup::readLandmarks( const char *path ) {
 
 	vector < string > files;
 
-	for( const auto &p: experimental::filesystem::directory_iterator( path ) ) {
+	for( const auto &p: filesystem::directory_iterator( path ) ) {
 
 		files.push_back ( p.path() );
 
@@ -1403,7 +1403,7 @@ void ImageGroup::readAndApplyFixedImagesTransforms() {
 
 void ImageGroup::saveTransforms() {
 
-	experimental::filesystem::create_directory( this->transformSubdirectory.c_str() );
+	filesystem::create_directory( this->transformSubdirectory.c_str() );
 
 	// output to .json
 	#pragma omp parallel for
