@@ -920,12 +920,23 @@ void ImageGroup::writeLinksDistances() {
 void ImageGroup::countInliers() {
 
 	int nPairs = 0, nInliers = 0, nOutliers = 0;
+	picojson::array imagesStats;
+	this->stats[ "images" ] = picojson::value( imagesStats );
+
+	// setup json stats record
+	for ( int i = 0; i < this->images.size(); i++ ) {
+
+		picojson::object obj;
+		this->stats[ "images" ].get<picojson::array>().push_back( picojson::value( obj ) );
+
+	}
 
 	#pragma omp parallel for reduction( +:nPairs, nInliers, nOutliers )
 	for ( int image1 = this->numberOfFixedImages; image1 < this->images.size(); image1++ ) {
 
 		Image &image = this->images[ image1 ];
 		Stats *statsA = &image.stats;
+		int nPairsLocal = 0, nOutliersLocal = 0, nInliersLocal = 0;
 
 		for ( auto const &pointA : image.points ) {
 
@@ -940,16 +951,31 @@ void ImageGroup::countInliers() {
 				float probA = statsA->getInlierProbability( dist );
 				float probB = image2->stats.getInlierProbability( dist );
 				float weight = min( probA, probB );
-				nPairs++;
+				nPairsLocal++;
 
 				if ( weight < this->inlierThreshold )
-					nOutliers++;
+					nOutliersLocal++;
 				else
-					nInliers++;
+					nInliersLocal++;
 
 			}
 
 		}
+
+		nPairs += nPairsLocal;
+		nInliers += nInliersLocal;
+		nOutliers += nOutliersLocal;
+		picojson::object stats;
+		stats[ "points" ] = picojson::value( ( double ) image.points.size() );
+		stats[ "pairs" ] = picojson::value( ( double ) nPairsLocal );
+		stats[ "inliers" ] = picojson::value( ( double ) nInliersLocal );
+		stats[ "outliers" ] = picojson::value( ( double ) nOutliersLocal );
+		picojson::object EMStats;
+		EMStats[ "c1" ] = picojson::value( image.stats.c1 );
+		EMStats[ "c2" ] = picojson::value( image.stats.c2 );
+		EMStats[ "ratio" ] = picojson::value( image.stats.ratio );
+		stats[ "EMStats" ] = picojson::value( EMStats );
+		this->stats[ "images" ].get<picojson::array>()[ image1 ] = picojson::value( stats );
 
 	}
 
