@@ -625,6 +625,15 @@ void ImageGroup::RANSAC( int imageId ) {
 	end = chrono::system_clock::now();
 	cout << maxNumberOfInliers << " inliers, computed in " << chrono::duration<float>(end - start).count() << "s" << endl;
 
+	if ( this->stats[ "RANSAC" ].is<picojson::null>() )
+		this->stats[ "RANSAC" ] = picojson::value( picojson::array() );
+
+	picojson::object stats;
+	stats[ "image" ] = picojson::value( ( double ) imageId );
+	stats[ "threshold" ] = picojson::value( this->RANSACInlierDistance );
+	stats[ "inliers" ] = picojson::value( (double) maxNumberOfInliers );
+	this->stats[ "RANSAC" ].get<picojson::array>().push_back( picojson::value( stats ) );
+
 }
 
 ImageGroup::RANSACResult ImageGroup::RANSACBatch( int imageId, int nIterations, int batch ) {
