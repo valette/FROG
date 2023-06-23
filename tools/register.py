@@ -120,7 +120,7 @@ execute( matchCmd )
 
 #### register
 frogBin = join( frogPath, "frog" )
-frogArgs = [ frogBin, "pairs.bin", "-fd", args.inputDir + "/transforms" ]
+frogArgs = [ frogBin, "pairs.bin", "-j -fd", args.inputDir + "/transforms" ]
 if args.nDeformableLevels : frogArgs.extend( [ "-dl", str( args.nDeformableLevels ) ] )
 if args.nLinearIterations : frogArgs.extend( [ "-li", str( args.nLinearIterations ) ] )
 if not args.all : frogArgs.extend( [ "-fi", str( len( points ) ) ] )
