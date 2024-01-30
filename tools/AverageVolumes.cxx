@@ -1,16 +1,17 @@
 #include <cmath>
 #include <vtkImageCast.h>
 #include <vtkImageData.h>
+#include <vtkNew.h>
+#include <vtkSmartPointer.h>
 #include <vtkNIFTIImageWriter.h>
 
 #include "../vtkOpenSURF3D/vtkRobustImageReader.h"
 
 int main( int argc, char *argv[] ) {
 
-	vtkRobustImageReader *reader = vtkRobustImageReader::New();
-	vtkImageData *average = vtkImageData::New();
-	vtkImageData *stdev = vtkImageData::New();
-	vtkImageCast *cast = vtkImageCast::New();
+	vtkNew<vtkRobustImageReader> reader;
+	vtkNew<vtkImageData> average, stdev;
+	vtkNew<vtkImageCast> cast;
 	cast->SetOutputScalarTypeToFloat();
 	float nImages = argc - 1;
 
@@ -20,7 +21,7 @@ int main( int argc, char *argv[] ) {
 		std::cout << "load : " << file << std::endl;
 		reader->SetFileName( file );
 		reader->Update();
-		vtkImageData *image = reader->GetOutput();
+		vtkSmartPointer<vtkImageData> image = reader->GetOutput();
 		int dims[ 3 ];
 		image->GetDimensions( dims );
 		int nbVoxels = dims[ 0 ] * dims[ 1 ] * dims[ 2 ];
@@ -56,11 +57,9 @@ int main( int argc, char *argv[] ) {
 
 		}
 
-		image->Delete();
-
 	}
 
-	vtkNIFTIImageWriter *writer = vtkNIFTIImageWriter::New();
+	vtkNew<vtkNIFTIImageWriter> writer;
 	writer->SetInputData( average );
 	writer->SetFileName( "average.nii.gz" );
 	writer->Write();
