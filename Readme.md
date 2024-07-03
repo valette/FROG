@@ -1,7 +1,7 @@
 FROG : Fast Registration Of image Groups 
 ========================================
 <p align="center">
-  <img src="https://www.creatis.insa-lyon.fr/~valette/public/project/frog/featured_huf3b80675463e3a95253905cb1f0a6681_392849_720x0_resize_lanczos_2.png">
+  <img src="https://www.creatis.insa-lyon.fr/~valette/public/project/frog/featured_huf3b80675463e3a95253905cb1f0a6681_392849_cae6eb67255cf523f959b4cd1212c3d8.webp">
 </p>
 
 ### Info ###
