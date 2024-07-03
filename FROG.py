@@ -122,7 +122,7 @@ def getFileList( inputPath ) :
 		f = open( inputPath, mode = 'r' )
 		for element in f.read().split( "\n" ) :
 			for ext in [ ".nii.gz", ".mhd", ".csv.gz" ] :
-				if element.endswith( ext ) : files.append( element )
+				if element.endswith( ext ) : files.append( join( dirname( inputPath) , element ) )
 
 		f.close()
 
