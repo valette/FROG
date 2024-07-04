@@ -15,6 +15,7 @@ frogPath = normpath( join( dirname( __file__ ), "bin" ) )
 parser = argparse.ArgumentParser( description = 'Register a group of volumes', formatter_class=argparse.ArgumentDefaultsHelpFormatter )
 regParse = parser.add_argument_group('General options')
 regParse.add_argument( 'input', help = 'input list of files or directory' )
+regParse.add_argument( '-se', '--skip-existing', dest="skipExisting", help = 'Do not recompute files if they already exist', action = "store_true" )
 regParse.add_argument( '-limit', dest = 'limit', type = int, help = 'limit number of input files' )
 regParse.add_argument( '-o', dest = 'outputDirectory', help = 'outputDirectory' )
 regParse.add_argument( '-j', dest = 'useSingleJSONTransformFile', help = 'use a single JSON file to store each transform', action="store_true"  )
@@ -44,6 +45,7 @@ SURFParser.add_argument( '-rast', dest = 'useTempd', help = 'use in-memory tempo
 averageParse = parser.add_argument_group('Average image computing')
 averageParse.add_argument( '-a', dest = 'imageSpacing', type = float, help = 'spacing for average image. Not computed if not specified')
 averageParse.add_argument( '-ao', dest = 'averageImageOnly', help = 'only compute average image, skip registration',  action="store_true" )
+averageParse.add_argument( '-ad', dest = 'averageImageDirectory', help = 'Average image subdirectory' )
 args = parser.parse_args()
 
 def separate():
@@ -166,9 +168,13 @@ for index, f in enumerate( files ):
 		continue
 
 	separate()
+	pointsFile = "points" + str( len ( keypointFiles ) )
+	fullPointsFile = join( os.getcwd(),  pointsFile + ".csv.gz")
+	if ( args.skipExisting and os.path.exists( fullPointsFile ) ):
+		print( "Points file ", fullPointsFile, "already exists, skipping" )
+		continue
 	print ( "Extracting points from " + f )
 	if args.flipToRAS: f = flipAndSaveToRAS( f )
-	pointsFile = "points" + str( len ( keypointFiles ) )
 	surfBin = join( frogPath, "surf3d" )
 	surfArgs = [ surfBin, f, "-s", str( args.spacing ), "-t", str( args.threshold ), "-n", str( args.numberOfPoints ), "-o", pointsFile ]
 	if len( maskFiles ) : surfArgs.extend( [ "-m", maskFiles[ index ] ] )
@@ -176,17 +182,20 @@ for index, f in enumerate( files ):
 	if args.cmax != None : surfArgs.extend( [ "-cmax", str( args.cmax ) ] )
 	if args.padding != None : surfArgs.extend( [ "-pad", str( args.padding ) ] )
 	execute( " ".join( surfArgs ) )
-	keypointFiles.append( join( os.getcwd(),  pointsFile + ".csv.gz") )
+	keypointFiles.append( fullPointsFile )
 
 separate()
 
 #### compute pairs
-volumes = open( volumesList, "w" )
-volumes.write( "\n".join( keypointFiles ) )
-volumes.close()
-matchBin = join( frogPath, "match" )
-matchCmd = " ".join( [ matchBin, volumesList, "-o", pairsFile, "-d", str( args.matchDistance ), "-np", str( args.numberOfPoints ), "-d2", str( args.ratio) ] )
-execute( matchCmd )
+if ( args.skipExisting and os.path.exists( "pairs.bin" ) ):
+	print( "Pairs file pairs.bin already exists, skipping computation" )
+else:
+	volumes = open( volumesList, "w" )
+	volumes.write( "\n".join( keypointFiles ) )
+	volumes.close()
+	matchBin = join( frogPath, "match" )
+	matchCmd = " ".join( [ matchBin, volumesList, "-o", pairsFile, "-d", str( args.matchDistance ), "-np", str( args.numberOfPoints ), "-d2", str( args.ratio) ] )
+	execute( matchCmd )
 
 #### register
 frogBin = join( frogPath, "frog" )
