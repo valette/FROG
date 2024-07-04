@@ -99,19 +99,31 @@ def computeAverageImage( images ) :
 	startTime = time.time()
 	dummyBin = join( frogPath, "DummyVolumeGenerator" )
 	execute( " ".join( [ dummyBin, "bbox.json", str( args.imageSpacing ) ] ) )
+	dummyFile = "dummy.mhd";
+	if args.averageImageDirectory:
+		if not os.path.exists( args.averageImageDirectory ):
+			os.mkdir( args.averageImageDirectory )
+		for file in [ "dummy.mhd", "dummy.zraw" ]:
+			os.rename( file, join( args.averageImageDirectory, file ) )
+		dummyFile = join( args.averageImageDirectory, dummyFile )
 	transformedImages = []
 
 	for i, image in enumerate( images ) :
 		separate()
 		transformBin = join( frogPath, "VolumeTransform" )
 		transformedImage = "transformed" + str( i ) + ".nii.gz"
+		if args.averageImageDirectory:
+			transformedImage = join( args.averageImageDirectory, transformedImage )
 		if args.flipToRAS: image = flipAndSaveToRAS( image )
-		execute( " ".join( [ transformBin, image, "dummy.mhd", "-t transforms/" + str( i ) + ".json -o " + transformedImage ] ) )
+		execute( " ".join( [ transformBin, image, dummyFile, "-t transforms/" + str( i ) + ".json -o " + transformedImage ] ) )
 		transformedImages.append( transformedImage )
 
 	averageBin = join( frogPath, "AverageVolumes" )
 	execute( " ".join( [ averageBin, " ".join( transformedImages ) ] ) )
 	print( "Average image computed in " + str( round( time.time() - startTime ) ) + "s" )
+	if args.averageImageDirectory:
+		for file in [ "average.nii.gz", "stdev.nii.gz" ]:
+			os.rename( file, join( args.averageImageDirectory, file ) )
 
 def getFileList( inputPath ) :
 
@@ -187,7 +199,7 @@ for index, f in enumerate( files ):
 separate()
 
 #### compute pairs
-if ( args.skipExisting and os.path.exists( "pairs.bin" ) ):
+if args.skipExisting and os.path.exists( pairsFile ):
 	print( "Pairs file pairs.bin already exists, skipping computation" )
 else:
 	volumes = open( volumesList, "w" )
