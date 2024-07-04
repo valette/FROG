@@ -1,11 +1,11 @@
 'use strict';
-
-const { async, THREE, desk, FROG, qx, visceral, _, ACVD } = window;
+console.clear();
+const { require, async, THREE, desk, FROG, qx, visceral, _, ACVD } = window;
 
 const filter1 = "all"; // registration batch. Can be "all", "women" or "men"
 const filter2 = "all"; // average image computation. Can be "all", "women" or "men" or a volume id
 
-let spacing = 3; // spacing of the output mean image
+let spacing = 5; // spacing of the output mean image
 
 let placesAll = [ // input directories
 
@@ -135,7 +135,7 @@ const loadVolumeConcurrency = 5;
 let width;
 
 // setup UI
-const viewer = new desk.MeshViewer( {
+const viewer = new desk.THREE.Viewer( {
 
     orthographic : true,
     cameraFront : [ 0, 1, 0 ],
@@ -186,6 +186,10 @@ for ( let place of places ) {
         presets = JSON.parse( await desk.FileSystem.readFileAsync( place ) );
         const list = Array.isArray( presets ) ? presets : presets.volumes;
         files = files.concat( list );
+
+    } else if ( place.endsWith( ".txt" ) ) {
+
+        files = await parseFileList( place );
 
     } else if ( isVolume( place ) ) {
 
@@ -240,6 +244,8 @@ const meshes = await async.mapLimit( files, loadVolumeConcurrency,
             parent : anchor
 
         } );
+
+        textSpriteHelper( mesh, "" + id );
 
         mesh.userData.id = id;
         mesh.userData.file = file;
@@ -364,6 +370,7 @@ container.add( deformableIterations );
 const registerButton = new qx.ui.form.Button( 'register' );
 container.add( registerButton );
 registerButton.addListener( 'execute', function () {
+    statusLabel.setValue( "Computing keypoints..." );
     computeRegistration().catch( ( e ) => { console.warn( e ); } );
 } );
 
@@ -374,27 +381,29 @@ const displayAverageImage = new qx.ui.form.CheckBox( 'Compute average' );
 //displayAverageImage.setValue( false );
 displayAverageImage.addListener( "changeValue", e =>  {
 
-    for ( let container of [ spacingContainer, displayMeshes, displayTransformedImages ] )
-        container.setVisibility( e.getData() ? "visible" : "excluded" );
+    averageContainer.setVisibility( e.getData() ? "visible" : "excluded" );
 
 } );
 container.add( displayAverageImage );
-
+const averageContainer = new qx.ui.container.Composite( new qx.ui.layout.VBox() );
+averageContainer.setDecorator( "main")
+averageContainer.setVisibility( "excluded" );
+container.add( averageContainer );
+averageContainer.add( new qx.ui.basic.Label( "Custom volume list:" ) );
+const volumesToAverageList = new qx.ui.form.TextField( "" );
+averageContainer.add( volumesToAverageList );
 const spacingContainer = new qx.ui.container.Composite( new qx.ui.layout.HBox() );
 spacingContainer.add( new qx.ui.basic.Label( "spacing (mm)  " ) );
 const spacingForm = new qx.ui.form.TextField( spacing.toString() );
 spacingForm.addListener( "changeValue", e => spacing = parseFloat( e.getData() ) );
 spacingContainer.add( spacingForm, { flex : 1 } );
-spacingContainer.setVisibility( "excluded" );
-container.add( spacingContainer );
+averageContainer.add( spacingContainer );
 
 const displayTransformedImages = new qx.ui.form.CheckBox( 'display transformed images' );
-container.add( displayTransformedImages );
-displayTransformedImages.setVisibility( "excluded" );
+averageContainer.add( displayTransformedImages );
 
 const displayMeshes = new qx.ui.form.CheckBox( 'display meshes' );
-container.add( displayMeshes );
-displayMeshes.setVisibility( "excluded" );
+averageContainer.add( displayMeshes );
 
 const displayLandmarkBox = new qx.ui.form.CheckBox( 'display landmarks' );
 displayLandmarkBox.setValue( displayLandmarks );
@@ -546,25 +555,27 @@ async function computeRegistration () {
     console.log(output.volumes);
     output.spacing = spacing;
 
-    // measure landmark dispersion among volumes from the VISCERAL database
-    const stats = await visceral.getLandmarkDistances( output );
+    if ( visceral ) {
+        // measure landmark dispersion among volumes from the VISCERAL database
+        const stats = await visceral.getLandmarkDistances( output );
 
-    if ( stats.stats ) {
+        if ( stats.stats ) {
 
-        const glob = stats.global;
-        console.log( "stats:", stats.stats );
-        console.log( ["mean", "median", "max", "stdev"]
-            .map( field => field + ' ' + ( glob[ field ] || 0 ).toFixed( 1 ) )
-            .join( ', ' )
-        );
+            const glob = stats.global;
+            console.log( "stats:", stats.stats );
+            console.log( ["mean", "median", "max", "stdev"]
+                .map( field => field + ' ' + ( glob[ field ] || 0 ).toFixed( 1 ) )
+                .join( ', ' )
+            );
 
-        console.log( "all stats:", stats );
+            console.log( "all stats:", stats );
 
+        }
     }
 
     if ( displayLandmarks ) {
 
-        const landmarkViewer = new desk.MeshViewer();
+        const landmarkViewer = new desk.THREE.Viewer();
         const radius = 5;
         const geometry = new THREE.SphereGeometry( radius, 32, 32 );
         const scene = landmarkViewer.getScene();
@@ -625,6 +636,13 @@ slider.addListener( "changeValue", () => {
 
 async function computeAverageImage( output ) {
 
+    if ( volumesToAverageList.getValue().length ) {
+        output = JSON.parse( JSON.stringify( output ) );
+        const fileList = await parseFileList( volumesToAverageList.getValue() );
+        for ( let [ index, file ] of fileList.entries() ) {
+            output.volumes[ index ].volume = file;
+        }
+    }
     const commonSpace = new FROG.CommonSpaceMeanImage( output );
     commonSpace.on('log', message => statusLabel.setValue( message ) );
     const result = await commonSpace.execute();
@@ -634,7 +652,7 @@ async function computeAverageImage( output ) {
 
     if ( !vv ) {
 
-        vv = new desk.VolumeViewer();
+        vv = new desk.MPR.Viewer();
         vv.getWindow().addListener( "beforeClose", () => vv = null );
 
     }
@@ -643,7 +661,7 @@ async function computeAverageImage( output ) {
 
     if ( displayMeshes.getValue() ) {
 
-        const organViewer = new desk.MeshViewer();
+        const organViewer = new desk.THREE.Viewer();
         organViewer.getWindow().setCaption( filter1 + " " + filter2 + " (" + output.volumes.length + ' images)' );
         await ACVD.extractMeshes( averageVolume, organs, organViewer );
 
@@ -651,7 +669,7 @@ async function computeAverageImage( output ) {
 
     if ( displayTransformedImages.getValue() ) {
 
-        const transformedVolumeViewer = new desk.VolumeViewer();
+        const transformedVolumeViewer = new desk.MPR.Viewer();
 
         for ( let [ index, volume ] of result.transformedVolumes.entries() ) {
 
@@ -758,5 +776,58 @@ function getVolumeFilter ( filter ) {
             };
 
     }
+
+}
+
+
+function textSpriteHelper (obj, text, options) {
+    options = options || {};
+    const bbox = new THREE.Box3();
+    var texture, canvas, context;
+    const field = options.field || "sprite";
+    var size = options.size || 100;
+    var height = 64;
+    text = text.trim();
+    canvas = document.createElement('canvas');
+    canvas.height = Math.round( height * 1.2 );
+    context = canvas.getContext("2d");
+    context.font = height + 'px bold Arial';
+    var width = context.measureText( text + '' ).width;
+    canvas.width =  width;
+    const sprite = new THREE.SpriteHelper( canvas );
+    bbox.setFromObject( obj );
+    if ( bbox.isEmpty() ) bbox.expandByPoint( obj.position );
+    bbox.translate( obj.position.clone().negate() );
+    sprite.position.copy( bbox.getCenter( new THREE.Vector3() ) );
+    sprite.position.z = bbox.max.z;
+    sprite.scale.x = size * width / height;
+    sprite.scale.y = size;
+    obj.add(sprite);
+
+    context = canvas.getContext( '2d' );
+    texture = sprite.material.map;
+    canvas = texture.image;
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    context.fillStyle = options.backgroundColor || 'rgba(0, 0, 0, 0.5)';
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    context.fillStyle = options.color || 'yellow';
+    context.font = height + 'px bold Arial';
+    context.fillText( text, 0, height - 7 );
+    if (options.strokeColor) {
+        context.strokeStyle = options.strokeColor;
+        context.lineWidth = 2;
+        context.strokeText( text, 0, height - 7 );
+    }
+    texture.needsUpdate = true;
+    return sprite;
+}
+
+
+async function parseFileList( place ) {
+
+    files = ( await desk.FileSystem.readFileAsync( place ) ).split( "\n" )
+        .filter( f => ( f.length > 0 ) && ( !f.startsWith( "#") ) );
+    const { join, dirname } = require( "path" );
+    return files.map( file => join( dirname( place ), file ) );
 
 }
