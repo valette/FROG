@@ -1333,17 +1333,11 @@ void ImageGroup::readPairs( char *inputFile ) {
 
 		for ( int i = 0; i < size; i++ ) {
 
-			pointIdType point1, point2;
-			unused = fread(&point1, sizeof(pointIdType), 1, file);
-			unused = fread(&point2, sizeof(pointIdType), 1, file);
-			Link link1;
-			Link link2;
-			link1.image = image1;
-			link1.point = point1;
-			link2.image = image2;
-			link2.point = point2;
-			this->images[ image1 ].points[ point1 ].links.push_back( link2 );
-			this->images[ image2 ].points[ point2 ].links.push_back( link1 );
+			pointIdType p1, p2;
+			unused = fread(&p1, sizeof(pointIdType), 1, file);
+			unused = fread(&p2, sizeof(pointIdType), 1, file);
+			this->images[ image1 ].points[ p1 ].links.push_back( { image2, p2 } );
+			this->images[ image2 ].points[ p2 ].links.push_back( { image1, p1 } );
 
 		}
 
