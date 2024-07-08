@@ -21,6 +21,7 @@ public:
 	bool useScale; // use scale for linear registration
 	int deformableLevels; // number of deformable levels
 	int deformableIterations; // number of iteration for each level
+	float linearInitializationAnchor[ 3 ];
 	float linearAlpha; // update ratio
 	float deformableAlpha; // update ratio
 	int statIntervalUpdate; // update stats every n iterations
@@ -55,7 +56,10 @@ public:
 			invertLandmarksCoordinates = true;
 			initialGridSize = 100;
 			inlierThreshold = 0.5;
-			linearAlpha =  0.5;
+			linearAlpha = 0.5;
+			linearInitializationAnchor[ 0 ] = 0.5;
+			linearInitializationAnchor[ 1 ] = 0.5;
+			linearInitializationAnchor[ 2 ] = 0.5;
 			linearIterations = 50;
 			maxDisplacementRatio = 0.4;
 			deformableLevels = 3;

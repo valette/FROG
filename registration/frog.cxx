@@ -17,45 +17,48 @@ int main( int argc, char *argv[] ) {
 		cout << "Options : " << endl;
 
 		cout << endl << "*Linear registration:" << endl;
-		cout << "-dlinear 0/1 : display linear parameters during registration. default : " << group.printLinear << endl;
-		cout << "-la <value>  : set alpha. Default : " << group.linearAlpha << endl;
-		cout << "-li number   : number of iterations. Default : " << group.linearIterations << endl;
-		cout << "-s 0/1       : use scale. Default : " << group.useScale << endl;
+		cout << "-dlinear 0/1  : display linear parameters during registration. default : " << group.printLinear << endl;
+		cout << "-lanchor x y z: set initialization anchor relative position. Default : " << 
+			group.linearInitializationAnchor[ 0 ] << " " << group.linearInitializationAnchor[ 1 ] <<
+			" " << group.linearInitializationAnchor[ 2 ] << endl;
+		cout << "-la <value>   : set alpha. Default : " << group.linearAlpha << endl;
+		cout << "-li number    : number of iterations. Default : " << group.linearIterations << endl;
+		cout << "-s 0/1        : use scale. Default : " << group.useScale << endl;
 
 		cout << endl << "*Deformable registration:" << endl;
-		cout << "-da value    : set alpha. Default : " << group.deformableAlpha << endl;
-		cout << "-di number   : number of iterations for each level. Default : " << group.deformableIterations << endl;
-		cout << "-dl number   : number of levels. Default : " << group.deformableLevels << endl;
-		cout << "-g spacing   : initial grid spacing. Default : " << group.initialGridSize << endl;
-		cout << "-gd 0/1      : guaranteed diffeomorphism. Default : " << group.guaranteeDiffeomorphism << endl;
-		cout << "-gm ratio    : maximal displacement ratio to guarantee diffeomorphism. Default : " << group.maxDisplacementRatio << endl;
+		cout << "-da value     : set alpha. Default : " << group.deformableAlpha << endl;
+		cout << "-di number    : number of iterations for each level. Default : " << group.deformableIterations << endl;
+		cout << "-dl number    : number of levels. Default : " << group.deformableLevels << endl;
+		cout << "-g spacing    : initial grid spacing. Default : " << group.initialGridSize << endl;
+		cout << "-gd 0/1       : guaranteed diffeomorphism. Default : " << group.guaranteeDiffeomorphism << endl;
+		cout << "-gm ratio     : maximal displacement ratio to guarantee diffeomorphism. Default : " << group.maxDisplacementRatio << endl;
 
 		cout << endl << "*EM Weighting:" << endl;
-		cout << "-dstats 0/1  : display stats during registration. Default : " << group.printStats << endl;
-		cout << "-emi number  : max number of iterations for EM weighting. Default : " << Stats::maxIterations << endl;
-		cout << "-si number   : interval update for statistics. Default : " << group.statIntervalUpdate << endl;
-		cout << "-se number   : stats epsilon. Default : " << Stats::epsilon << endl;
-		cout << "-ss number   : stats maximal sample size. Default : " << Stats::maxSize << endl;
-		cout << "-t threshold : inlier probability threshold. Default : " << group.inlierThreshold << endl;
+		cout << "-dstats 0/1   : display stats during registration. Default : " << group.printStats << endl;
+		cout << "-emi number   : max number of iterations for EM weighting. Default : " << Stats::maxIterations << endl;
+		cout << "-si number    : interval update for statistics. Default : " << group.statIntervalUpdate << endl;
+		cout << "-se number    : stats epsilon. Default : " << Stats::epsilon << endl;
+		cout << "-ss number    : stats maximal sample size. Default : " << Stats::maxSize << endl;
+		cout << "-t threshold  : inlier probability threshold. Default : " << group.inlierThreshold << endl;
 
 		cout << endl << "*Registration with fixed images:" << endl;
-		cout << "-fi number   : number of fixed images. Default : " << group.numberOfFixedImages << endl;
-		cout << "-fd path     : fixed images transforms directory." << endl;
-		cout << "-r 0/1       : use RANSAC instead of linear registration. Default : " << group.useRANSAC << endl;
-		cout << "-ri number   : number of RANSAC iterations. Default : " << group.numberOfRANSACIterations << endl;
-		cout << "-rs maxScale : maximum allowed scale for RANSAC iterations. Default : " << group.RANSACMaxScale << endl;
-		cout << "-rid value   : RANSAC inlier distance. Default : " << group.RANSACInlierDistance << endl;
+		cout << "-fi number    : number of fixed images. Default : " << group.numberOfFixedImages << endl;
+		cout << "-fd path      : fixed images transforms directory." << endl;
+		cout << "-r 0/1        : use RANSAC instead of linear registration. Default : " << group.useRANSAC << endl;
+		cout << "-ri number    : number of RANSAC iterations. Default : " << group.numberOfRANSACIterations << endl;
+		cout << "-rs maxScale  : maximum allowed scale for RANSAC iterations. Default : " << group.RANSACMaxScale << endl;
+		cout << "-rid value    : RANSAC inlier distance. Default : " << group.RANSACInlierDistance << endl;
 
 		cout << endl << "*Measure error with reference landmarks:" << endl;
-		cout << "-l path      : path containing reference landmarks." << endl;
-		cout << "-il 0/1      : invert landmarks x and y coordinates. Default : " << group.invertLandmarksCoordinates << endl;
+		cout << "-l path       : path containing reference landmarks." << endl;
+		cout << "-il 0/1       : invert landmarks x and y coordinates. Default : " << group.invertLandmarksCoordinates << endl;
 
 		cout << endl << "*Other parameters:" << endl;
-		cout << "-nt number : set number of threads. Default : number of cores" << endl;
-		cout << "-mf file     : path+name of measure.csv file." << endl;
-		cout << "-wp 0/1      : write pairs, distances and probabilities. Default : " << group.writePairs << endl;
-		cout << "-j           : outputs a single big JSON file for each transform. Default : " << group.writeSingleFileTransforms << endl;
-		cout << "-ts subdir   : subdirectory where transforms will be written. Default : " << group.transformSubdirectory << endl;
+		cout << "-nt number    : set number of threads. Default : number of cores" << endl;
+		cout << "-mf file      : path+name of measure.csv file." << endl;
+		cout << "-wp 0/1       : write pairs, distances and probabilities. Default : " << group.writePairs << endl;
+		cout << "-j            : outputs a single big JSON file for each transform. Default : " << group.writeSingleFileTransforms << endl;
+		cout << "-ts subdir    : subdirectory where transforms will be written. Default : " << group.transformSubdirectory << endl;
 
 		return( 1 );
 
@@ -116,6 +119,13 @@ int main( int argc, char *argv[] ) {
 		if ( strcmp( key, "-il" ) == 0 ) {
 			group.invertLandmarksCoordinates = atoi( value );
 		}
+
+		if ( strcmp( key, "-lanchor" ) == 0) {
+			for ( int i = 0; i < 3; i++ )
+				group.linearInitializationAnchor[ i ] =
+					atof( argv[argumentsIndex + 1 + i ] );
+		}
+
 		if ( strcmp( key, "-la" ) == 0) {
 			group.linearAlpha = atof( value );
 		}

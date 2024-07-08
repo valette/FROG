@@ -727,8 +727,9 @@ ImageGroup::RANSACResult ImageGroup::RANSACBatch( int imageId, int nIterations, 
 void ImageGroup::setupLinearTransforms() {
 
 	float box[ 6 ];
-	float centers[ this->images.size() ][ 3 ];
-	float average[ 3 ] = { 0, 0, 0 };
+	float anchors[ this->images.size() ][ 3 ];
+	float averageAnchor[ 3 ] = { 0, 0, 0 };
+	float *anchorPosition = this->linearInitializationAnchor;
 
 	for ( int i = 0; i < this->images.size(); i++ ) {
 
@@ -743,10 +744,11 @@ void ImageGroup::setupLinearTransforms() {
 
 		for ( int j = 0; j < 3; j++ ) {
 
-			float center = 0.5 * ( box[ 1 + 2 * j ] + box[ 2 * j ] );
-			centers[ i ][ j ] = center;
+			float c = anchorPosition[ j ];
+			float anchor = ( 1 - c ) * box[ 2 * j ] + c * box[ 1 + 2 * j ];
+			anchors[ i ][ j ] = anchor;
 			if ( i < this->images.size() - this->numberOfFixedImages )
-				average[ j ] += center / ( float ) ( this->images.size() - this->numberOfFixedImages );
+				averageAnchor[ j ] += anchor / ( float ) ( this->images.size() - this->numberOfFixedImages );
 
 		}
 
@@ -765,7 +767,7 @@ void ImageGroup::setupLinearTransforms() {
 		matrix->Identity();
 
 		for ( int j = 0; j < 3; j++ )
-			matrix->SetElement( j, 3, average[ j ] - centers[ i ][ j ] );
+			matrix->SetElement( j, 3, averageAnchor[ j ] - anchors[ i ][ j ] );
 
 		( ( vtkMatrixToLinearTransform *) image->transform )->SetInput( matrix );
 
