@@ -23,6 +23,7 @@ frogParse = parser.add_argument_group('Registration options')
 frogParse.add_argument( '-dl', dest = 'deformableLevels', help = 'number of deformable levels', type = int )
 frogParse.add_argument( '-di', dest = 'deformableIterations', help = 'number of deformable iterations per level', type = int )
 frogParse.add_argument( '-g', dest = 'gridSpacing', type = float, help = 'initial grid spacing' )
+frogParse.add_argument( '-lanchor', dest = 'linearInitializationAnchor', help = 'Linear initialization Anchor', type = float, nargs = 3, default = [0.5,0.5,0.5] )
 frogParse.add_argument( '-li', dest = 'linearIterations', help = 'number of linear iterations', type = int )
 frogParse.add_argument( '-ri', dest = 'RANSACIterations', help = 'number of RANSAC iterations', type = int )
 frogParse.add_argument( '-l', dest = 'landmarks', help = 'path to landmarks file' )
@@ -136,6 +137,7 @@ def getFileList( inputPath ) :
 	else:
 		f = open( inputPath, mode = 'r' )
 		for element in f.read().split( "\n" ) :
+			if element.startswith( "#" ) : continue
 			for ext in [ ".nii.gz", ".mhd", ".csv.gz" ] :
 				if element.endswith( ext ) : files.append( join( dirname( inputPath) , element ) )
 
@@ -182,6 +184,7 @@ for index, f in enumerate( files ):
 	separate()
 	pointsFile = "points" + str( len ( keypointFiles ) )
 	fullPointsFile = join( os.getcwd(),  pointsFile + ".csv.gz")
+	keypointFiles.append( fullPointsFile )
 	if ( args.skipExisting and os.path.exists( fullPointsFile ) ):
 		print( "Points file ", fullPointsFile, "already exists, skipping" )
 		continue
@@ -194,7 +197,6 @@ for index, f in enumerate( files ):
 	if args.cmax != None : surfArgs.extend( [ "-cmax", str( args.cmax ) ] )
 	if args.padding != None : surfArgs.extend( [ "-pad", str( args.padding ) ] )
 	execute( " ".join( surfArgs ) )
-	keypointFiles.append( fullPointsFile )
 
 separate()
 
@@ -221,7 +223,7 @@ if args.landmarks : frogArgs.extend( [ "-l", args.landmarks ] )
 if args.gridSpacing : frogArgs.extend( [ "-g", str( args.gridSpacing ) ] )
 if args.invertLandmarks : frogArgs.extend( [ "-il", str( args.invertLandmarks ) ] )
 if args.useSingleJSONTransformFile : frogArgs.extend( [ "-j" ] )
-
+if args.linearInitializationAnchor : frogArgs.extend( [ "-lanchor", *map( lambda x : str( x ), args.linearInitializationAnchor ) ] )
 execute( " ".join( frogArgs ) )
 
 separate()
