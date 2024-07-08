@@ -93,7 +93,7 @@ protected:
 	struct Landmark {
 
 		int image;
-		float xyz[ 3 ];
+		int point;
 
 	};
 	typedef std::vector < Landmark > Landmarks;
@@ -130,7 +130,7 @@ protected:
 	void saveBoundingBox();
 
 	// reference landmarks
-	std::map < std::string, Landmarks* > landmarks;
+	std::map < std::string, Landmarks > landmarks;
 	bool computeLandmarkDistances( Measure &measure );
 	bool saveTransformedLandmarks();
 	void saveLandmarkDistances();

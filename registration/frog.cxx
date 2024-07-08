@@ -199,10 +199,10 @@ int main( int argc, char *argv[] ) {
 
 	}
 
-	if ( landmarks ) group.readLandmarks( landmarks );
 	char *inputFile = argv[1];
 	cout << "Reading : " << inputFile << endl;
 	group.readPairs( inputFile );
+	if ( landmarks ) group.readLandmarks( landmarks );
 	group.run();
 	end = chrono::system_clock::now();
 	cout << "Total time : " << chrono::duration<float>(end-start).count() << "s" << endl;

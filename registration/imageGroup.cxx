@@ -1127,28 +1127,25 @@ void ImageGroup::readLandmarks( const char *path ) {
 			line.erase( 0, pos + 1 );
 			Landmark landmark;
 			landmark.image = i;
+			auto &points = this->images[ i ].points;
+			landmark.point = points.size();
+			Point pt;
 
 			for ( int j = 0; j < 3; j++ ) {
 
 				int pos = line.find( ',');
 				string coord = line.substr( 0, pos );
 				line.erase( 0, pos + 1 );				
-				landmark.xyz[ j ] = stof( coord );
+				pt.xyz[ j ] = stof( coord );
 				if ( j < 2 && this->invertLandmarksCoordinates )
-					landmark.xyz[ j ] *= -1; // get opposite x and y coordinates!
+					pt.xyz[ j ] *= -1; // get opposite x and y coordinates!
+				for ( int k = 0; k < 3; k++ )
+					pt.original_xyz[ k ] = pt.xyz[ k ];
 
 			}
 
-			auto arr = this->landmarks.find( name );
-			Landmarks *landmarks;
-
-			if ( arr == this->landmarks.end() ) {
-
-				landmarks = this->landmarks[ name ] = new Landmarks;
-
-			} else landmarks = arr->second;
-
-			landmarks->push_back( landmark );
+			points.push_back( pt );
+			this->landmarks[ name ].push_back( landmark );
 
 		}
 
@@ -1160,49 +1157,31 @@ bool ImageGroup::computeLandmarkDistances( Measure &measure ) {
 
 	if ( !this->landmarks.size() ) return false;
 	vector< float > distances;
-	vector < Landmarks* > landmarkV;
 
-	for ( auto iter = this->landmarks.begin(); iter != landmarks.end(); iter++) {
+	for ( auto const &[name, currentLandmarks] : this->landmarks) {
 
-		landmarkV.push_back( iter->second );
-
-	}
-
-	#pragma omp declare reduction (merge : std::vector<float> : omp_out.insert(omp_out.end(), omp_in.begin(), omp_in.end()))
-
-	#pragma omp parallel for reduction( merge: distances )
-	for ( int i = 0; i < landmarkV.size(); i++ ) {
-
-		Landmarks *landmarks = landmarkV[ i ];
 		float center[] = { 0, 0, 0 };
 		int n = 0;
 
-		for ( int i = 0; i < landmarks->size(); i++ ) {
+		for ( auto const &landmark : currentLandmarks ) {
 
-			Landmark &landmark = landmarks[ 0 ][ i ];
 			if ( landmark.image > ( this->images.size() - 1 ) ) continue;
 			n++;
-			float xyz2[ 3 ];
-			this->images[ landmark.image ].allTransforms->TransformPoint(
-				landmark.xyz, xyz2 );
-
-			for ( int k = 0; k < 3; k++ ) center[ k ] += xyz2[ k ];
+			const auto &pt = this->images[ landmark.image ].points[ landmark.point ];
+			for ( int k = 0; k < 3; k++ ) center[ k ] += pt.xyz2[ k ];
 
 		}
 
 		for ( int k = 0; k < 3; k++ ) center[ k ] /= n;
 
-		for ( int i = 0; i < landmarks->size(); i++ ) {
+		for ( auto const &landmark : currentLandmarks ) {
 
-			Landmark &landmark = landmarks[ 0 ][ i ];
 			if ( landmark.image > ( this->images.size() - 1 ) ) continue;
 			float distance2 = 0;
-			float xyz2[ 3 ];
-			this->images[ landmark.image ].allTransforms->TransformPoint(
-				landmark.xyz, xyz2 );
+			const auto &pt = this->images[ landmark.image ].points[ landmark.point ];
 
 			for ( int k = 0; k < 3; k++ ) {
-				float diff = xyz2[ k ] - center[ k ];
+				float diff = pt.xyz2[ k ] - center[ k ];
 				distance2 += diff * diff;
 			}
 
@@ -1236,31 +1215,28 @@ bool ImageGroup::saveTransformedLandmarks() {
 	if ( !this->landmarks.size() ) return false;
 	picojson::object transformedLandmarks;
 
-	for ( auto iter = this->landmarks.begin(); iter != landmarks.end(); iter++) {
+	for ( const auto &[ name, arr ] : this->landmarks ) {
 
 		picojson::array landmarksArray;
-		auto &arr = *iter->second;
 
-		for ( auto landmark = arr.begin(); landmark != arr.end(); landmark++) {
+		for ( const auto &landmark : arr ) {
 
-			if ( landmark->image > ( this->images.size() - 1 ) ) continue;
-			float xyz2[ 3 ];
-			this->images[ landmark->image ].allTransforms
-				->TransformPoint( landmark->xyz, xyz2 );
+			if ( landmark.image > ( this->images.size() - 1 ) ) continue;
+			const auto &pt = this->images[ landmark.image ].points[ landmark.point ];
 
 			picojson::object land;
-			land[ "image" ] = picojson::value( ( double ) landmark->image );
+			land[ "image" ] = picojson::value( ( double ) landmark.image );
 			picojson::array coords;
 
 			for ( int i = 0; i < 3; i++ )
-				coords.push_back( picojson::value( xyz2[ i ] ) );
+				coords.push_back( picojson::value( pt.xyz2[ i ] ) );
 
 			land[ "xyz" ] = picojson::value( coords );
 			landmarksArray.push_back( picojson::value( land ) );
 
 		}
 
-		transformedLandmarks[ iter->first ] = picojson::value( landmarksArray );
+		transformedLandmarks[ name ] = picojson::value( landmarksArray );
 
 	}
 
@@ -1279,42 +1255,36 @@ void ImageGroup::saveLandmarkDistances() {
 	fs.open( "distances.txt", fstream::out | fstream::trunc );
 	picojson::object distances;
 
-	for ( auto iter = this->landmarks.begin(); iter != landmarks.end(); iter++) {
+	for ( const auto &[ name, landmarks ] : this->landmarks ) {
 
-		Landmarks *landmarks = iter->second;
 		float center[] = { 0, 0, 0 };
 		int n = 0;
 
-		for ( int i = 0; i < landmarks->size(); i++ ) {
+		for ( auto const &landmark : landmarks ) {
 
-			Landmark &landmark = landmarks[ 0 ][ i ];
 			if ( landmark.image > ( this->images.size() - 1 ) ) continue;
 			n++;
-			float xyz2[ 3 ];
-			this->images[ landmark.image ].allTransforms->TransformPoint(
-				landmark.xyz, xyz2 );
+			const auto &pt = this->images[ landmark.image ].points[ landmark.point ];
 
-			for ( int k = 0; k < 3; k++ ) center[ k ] += xyz2[ k ];
+
+			for ( int k = 0; k < 3; k++ ) center[ k ] += pt.xyz2[ k ];
 
 		}
 
 		for ( int k = 0; k < 3; k++ ) center[ k ] /= n;
 
-		for ( int i = 0; i < landmarks->size(); i++ ) {
+		for ( auto const &landmark : landmarks ) {
 
-			Landmark &landmark = landmarks[ 0 ][ i ];
 			if ( landmark.image > ( this->images.size() - 1 ) ) continue;
 			float distance2 = 0;
-			float xyz2[ 3 ];
-			this->images[ landmark.image ].allTransforms->TransformPoint(
-				landmark.xyz, xyz2 );
+			const auto &pt = this->images[ landmark.image ].points[ landmark.point ];
 
 			for ( int k = 0; k < 3; k++ ) {
-				float diff = xyz2[ k ] - center[ k ];
+				float diff = pt.xyz2[ k ] - center[ k ];
 				distance2 += diff * diff;
 			}
 
-			fs << sqrt( distance2 ) << "," << iter->first << "," << landmark.image << endl;
+			fs << sqrt( distance2 ) << "," << name << "," << landmark.image << endl;
 
 		}
 
