@@ -1177,15 +1177,9 @@ bool ImageGroup::computeLandmarkDistances( Measure &measure ) {
 		for ( auto const &landmark : currentLandmarks ) {
 
 			if ( landmark.image > ( this->images.size() - 1 ) ) continue;
-			float distance2 = 0;
 			const auto &pt = this->images[ landmark.image ].points[ landmark.point ];
-
-			for ( int k = 0; k < 3; k++ ) {
-				float diff = pt.xyz2[ k ] - center[ k ];
-				distance2 += diff * diff;
-			}
-
-			distances.push_back( sqrt( distance2 ) );
+			float d2 = vtkMath::Distance2BetweenPoints( pt.xyz2, center );
+			distances.push_back( sqrt( d2 ) );
 
 		}
 
@@ -1278,13 +1272,8 @@ void ImageGroup::saveLandmarkDistances() {
 			if ( landmark.image > ( this->images.size() - 1 ) ) continue;
 			float distance2 = 0;
 			const auto &pt = this->images[ landmark.image ].points[ landmark.point ];
-
-			for ( int k = 0; k < 3; k++ ) {
-				float diff = pt.xyz2[ k ] - center[ k ];
-				distance2 += diff * diff;
-			}
-
-			fs << sqrt( distance2 ) << "," << name << "," << landmark.image << endl;
+			float d2 = vtkMath::Distance2BetweenPoints( pt.xyz2, center );
+			fs << sqrt( d2 ) << "," << name << "," << landmark.image << endl;
 
 		}
 
