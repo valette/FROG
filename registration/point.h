@@ -6,9 +6,11 @@
 
 #define print( v, size ) { for (int __i = 0; __i < size; __i++ ) { std::cout << v[ __i ]; if ( __i < ( size - 1 ) ) std::cout<< " " ;} std::cout << std::endl;}
 
+typedef unsigned short imageIdType;
+
 struct Link {
 
-	unsigned short image;
+	imageIdType image;
 	pointIdType point;
 
 };
@@ -25,5 +27,7 @@ public:
 	float xyz2[3]; // transformed coordinates
 
 	std::vector< Link > links; // links
+
+	std::vector< Link > hardLinks; // hard constraints
 
 };

@@ -311,6 +311,25 @@ double ImageGroup::updateDeformableTransforms( const float alpha ) {
 
 			}
 
+			for ( auto const &link : point.hardLinks ) {
+
+				Image *image2 = &this->images[ link.image ];
+				Point *pointB = &image2->points[ link.point ];
+				float *pB = pointB->xyz2;
+				float dist = sqrt( vtkMath::Distance2BetweenPoints( pA, pB ) );
+				float weight = this->landmarksConstraintsWeight;
+
+				sDistances += weight *weight * dist * dist;
+				sWeights += weight * weight;
+				weight *= weight;
+
+				for ( int k = 0; k < 3; k++ )
+					sDisp[ k ] += weight * ( pB[ k ] - pA[ k ] );
+
+				sWeight += weight;
+
+			}
+
 			if ( sWeight == 0 ) continue;
 			// add point displacement to gradient
 			int idZ = 0;
@@ -840,19 +859,11 @@ void ImageGroup::transformPoints( bool apply ) {
 	#pragma omp parallel for
 	for ( int i = this->numberOfFixedImages; i < this->images.size() ; i++ ) {
 
-		Image *image = &this->images[ i ];
-		image->transformPoints();
-
-		if ( apply ) {
-
-			for ( auto point = image->points.begin(), end = image->points.end(); point != end; point++ ) {
-
-				for ( int k = 0; k < 3; k++ )
-					point->xyz[ k ] = point->xyz2[ k ];
-
-			}
-
-		}
+		auto &image = this->images[ i ];
+		image.transformPoints();
+		if ( !apply ) continue;
+		for ( auto &point : image.points )
+			for ( int k = 0; k < 3; k++ ) point.xyz[ k ] = point.xyz2[ k ];
 
 	}
 
@@ -1102,15 +1113,13 @@ void ImageGroup::setupStats() {
 
 }
 
-void ImageGroup::readLandmarks( const char *path ) {
+void ImageGroup::addLandmarks( const char *path, bool asConstraints ) {
 
 	vector < string > files;
+	std::map < std::string, Landmarks > constraints;
 
-	for( const auto &p: filesystem::directory_iterator( path ) ) {
-
+	for( const auto &p: filesystem::directory_iterator( path ) )
 		files.push_back ( p.path() );
-
-	}
 
 	sort( files.begin(), files.end() );
 
@@ -1146,9 +1155,29 @@ void ImageGroup::readLandmarks( const char *path ) {
 
 			points.push_back( pt );
 			this->landmarks[ name ].push_back( landmark );
+			constraints[ name ].push_back( landmark );
 
 		}
 
+	}
+
+	if ( !asConstraints ) return;
+
+	for ( auto const &[name, currentLandmarks] : constraints) {
+
+		for ( auto const &landmark : currentLandmarks ) {
+
+			for ( auto const &landmark2 : currentLandmarks ) {
+
+				if ( ( landmark.image == landmark2.image ) &&
+					( landmark.point == landmark2.point ) )
+					continue;
+
+				this->images[ landmark.image ].points[ landmark.point ].hardLinks.push_back( { landmark2.image, landmark2.point } );
+
+			}
+
+		}
 	}
 
 }
@@ -1160,7 +1189,7 @@ bool ImageGroup::computeLandmarkDistances( Measure &measure ) {
 
 	for ( auto const &[name, currentLandmarks] : this->landmarks) {
 
-		float center[] = { 0, 0, 0 };
+		float center[ 3 ] = { 0, 0, 0 };
 		int n = 0;
 
 		for ( auto const &landmark : currentLandmarks ) {
@@ -1251,7 +1280,7 @@ void ImageGroup::saveLandmarkDistances() {
 
 	for ( const auto &[ name, landmarks ] : this->landmarks ) {
 
-		float center[] = { 0, 0, 0 };
+		float center[ 3 ] = { 0, 0, 0 };
 		int n = 0;
 
 		for ( auto const &landmark : landmarks ) {

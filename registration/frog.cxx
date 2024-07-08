@@ -49,9 +49,11 @@ int main( int argc, char *argv[] ) {
 		cout << "-rs maxScale  : maximum allowed scale for RANSAC iterations. Default : " << group.RANSACMaxScale << endl;
 		cout << "-rid value    : RANSAC inlier distance. Default : " << group.RANSACInlierDistance << endl;
 
-		cout << endl << "*Measure error with reference landmarks:" << endl;
+		cout << endl << "*Reference landmarks:" << endl;
 		cout << "-l path       : path containing reference landmarks." << endl;
+		cout << "-lc path      : path containing constraint landmarks." << endl;
 		cout << "-il 0/1       : invert landmarks x and y coordinates. Default : " << group.invertLandmarksCoordinates << endl;
+		cout << "-lcw path     : landmarks constraints weight. Default: " << group.landmarksConstraintsWeight << endl;
 
 		cout << endl << "*Other parameters:" << endl;
 		cout << "-nt number    : set number of threads. Default : number of cores" << endl;
@@ -64,6 +66,9 @@ int main( int argc, char *argv[] ) {
 
 	}
 
+	cout << "Reading : " << argv[ 1 ] << endl;
+	group.readPairs( argv[ 1 ] );
+
 	int argumentsIndex = 2;
 	char *landmarks = 0;
 
@@ -71,6 +76,7 @@ int main( int argc, char *argv[] ) {
 
 		char* key = argv[argumentsIndex];
 		char *value = argv[argumentsIndex + 1];
+		int increment = 2;
 
 		if ( strcmp( key, "-da" ) == 0) {
 			group.deformableAlpha = atof( value );
@@ -121,6 +127,7 @@ int main( int argc, char *argv[] ) {
 		}
 
 		if ( strcmp( key, "-lanchor" ) == 0) {
+			increment = 4;
 			for ( int i = 0; i < 3; i++ )
 				group.linearInitializationAnchor[ i ] =
 					atof( argv[argumentsIndex + 1 + i ] );
@@ -179,7 +186,15 @@ int main( int argc, char *argv[] ) {
 		}
 
 		if ( strcmp( key, "-l" ) == 0 ) {
-			landmarks = value;
+			group.addLandmarks( value );
+		}
+
+		if ( strcmp( key, "-lc" ) == 0 ) {
+			group.addLandmarks( value, true );
+		}
+
+		if ( strcmp( key, "-lcw" ) == 0 ) {
+			group.landmarksConstraintsWeight = atof( value );
 		}
 
 		if ( strcmp( key, "-mf" ) == 0 ) {
@@ -192,17 +207,13 @@ int main( int argc, char *argv[] ) {
 
 		if ( strcmp( key, "-j" ) == 0 ) {
 			group.writeSingleFileTransforms = true;
-			argumentsIndex--;
+			increment = 1;
 		}
 
-		argumentsIndex += 2;
+		argumentsIndex += increment;
 
 	}
 
-	char *inputFile = argv[1];
-	cout << "Reading : " << inputFile << endl;
-	group.readPairs( inputFile );
-	if ( landmarks ) group.readLandmarks( landmarks );
 	group.run();
 	end = chrono::system_clock::now();
 	cout << "Total time : " << chrono::duration<float>(end-start).count() << "s" << endl;

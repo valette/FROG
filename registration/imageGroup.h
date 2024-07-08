@@ -31,6 +31,7 @@ public:
 	bool guaranteeDiffeomorphism; // to guarantee that transforms will be diffeomorpic
 	float maxDisplacementRatio; // max ratio to guarantee diffeomorphism
 	bool invertLandmarksCoordinates; // if true the landmarks coordinates x and y will be inverted when loading
+	float landmarksConstraintsWeight; // weight for landmark constraints
 
 	const char* outputFileName = "measures.csv"; // output filename of measure.csv
 	void writeLinksDistances(); // write distances and probabilities between pairs to file
@@ -45,7 +46,7 @@ public:
 	bool writeSingleFileTransforms; // outputs a single big JSON file for each transform
 
 	std::string transformSubdirectory;
-	void readLandmarks( const char *path );
+	void addLandmarks( const char *path, bool asConstraints = false );
 
 	ImageGroup() {
 			boundingBoxMargin = 0.1;
@@ -54,6 +55,7 @@ public:
 			fixedTransformsDirectory = 0;
 			guaranteeDiffeomorphism = true;
 			invertLandmarksCoordinates = true;
+			landmarksConstraintsWeight = 50;
 			initialGridSize = 100;
 			inlierThreshold = 0.5;
 			linearAlpha = 0.5;
@@ -92,8 +94,8 @@ protected:
 
 	struct Landmark {
 
-		int image;
-		int point;
+		imageIdType image;
+		pointIdType point;
 
 	};
 	typedef std::vector < Landmark > Landmarks;
