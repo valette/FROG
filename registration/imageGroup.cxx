@@ -19,6 +19,7 @@
 #include <vtkLandmarkTransform.h>
 #include <vtkMath.h>
 #include <vtkMatrixToLinearTransform.h>
+#include <vtkPointData.h>
 #include <vtkPoints.h>
 
 #include "../tools/transformIO.h"
@@ -220,11 +221,7 @@ void ImageGroup::setupDeformableTransforms( int level ) {
 		coeffs->SetSpacing( spacing );
 		coeffs->SetDimensions( dims );
 		coeffs->AllocateScalars( VTK_FLOAT, 3 );
-		float *p = ( float *) coeffs->GetScalarPointer();
-
-		for ( int i = 0; i < 3 * dims[ 0 ] * dims[ 1 ] * dims[ 2 ]; i++ )
-			p[ i ] = 0;
-
+		coeffs->GetPointData()->GetScalars()->Fill( 0 );
 		vtkBSplineTransform *transform = vtkBSplineTransform::New();
 		transform->SetCoefficientData( coeffs );
 		transform->SetBorderModeToZero();
@@ -272,10 +269,8 @@ double ImageGroup::updateDeformableTransforms( const float alpha ) {
 		const auto increments = image.gradient->GetIncrements();
 		const auto spacing = image.gradient->GetSpacing();
 		const auto origin = image.gradient->GetOrigin();
-
 		double weights[ 3 ][ 4 ];
-		int nValues = 4 * dims[ 0 ] * dims[ 1 ] * dims[ 2 ];
-		for ( int i = 0; i < nValues; i++ ) gradient[ i ] = 0;
+		image.gradient->GetPointData()->GetScalars()->Fill( 0 );
 		Stats *statsA = &image.stats;
 
 		for ( auto const &point : image.points ) {
