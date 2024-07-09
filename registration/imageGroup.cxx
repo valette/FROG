@@ -1127,6 +1127,7 @@ void ImageGroup::addLandmarks( const char *path, bool asConstraints ) {
 
 		ifstream infile( files[ i ] );
 		string line;
+		if ( i > this->images.size() - 1 ) continue;
 
 		while ( getline( infile, line ) ) {
 
@@ -1190,22 +1191,16 @@ bool ImageGroup::computeLandmarkDistances( Measure &measure ) {
 	for ( auto const &[name, currentLandmarks] : this->landmarks) {
 
 		float center[ 3 ] = { 0, 0, 0 };
-		int n = 0;
 
 		for ( auto const &landmark : currentLandmarks ) {
 
-			if ( landmark.image > ( this->images.size() - 1 ) ) continue;
-			n++;
 			const auto &pt = this->images[ landmark.image ].points[ landmark.point ];
-			for ( int k = 0; k < 3; k++ ) center[ k ] += pt.xyz2[ k ];
+			for ( int k = 0; k < 3; k++ ) center[ k ] += pt.xyz2[ k ] / currentLandmarks.size();
 
 		}
 
-		for ( int k = 0; k < 3; k++ ) center[ k ] /= n;
-
 		for ( auto const &landmark : currentLandmarks ) {
 
-			if ( landmark.image > ( this->images.size() - 1 ) ) continue;
 			const auto &pt = this->images[ landmark.image ].points[ landmark.point ];
 			float d2 = vtkMath::Distance2BetweenPoints( pt.xyz2, center );
 			distances.push_back( sqrt( d2 ) );
@@ -1244,7 +1239,6 @@ bool ImageGroup::saveTransformedLandmarks() {
 
 		for ( const auto &landmark : arr ) {
 
-			if ( landmark.image > ( this->images.size() - 1 ) ) continue;
 			const auto &pt = this->images[ landmark.image ].points[ landmark.point ];
 
 			picojson::object land;
@@ -1281,25 +1275,16 @@ void ImageGroup::saveLandmarkDistances() {
 	for ( const auto &[ name, landmarks ] : this->landmarks ) {
 
 		float center[ 3 ] = { 0, 0, 0 };
-		int n = 0;
 
 		for ( auto const &landmark : landmarks ) {
 
-			if ( landmark.image > ( this->images.size() - 1 ) ) continue;
-			n++;
 			const auto &pt = this->images[ landmark.image ].points[ landmark.point ];
-
-
-			for ( int k = 0; k < 3; k++ ) center[ k ] += pt.xyz2[ k ];
+			for ( int k = 0; k < 3; k++ ) center[ k ] += pt.xyz2[ k ] / landmarks.size();
 
 		}
 
-		for ( int k = 0; k < 3; k++ ) center[ k ] /= n;
-
 		for ( auto const &landmark : landmarks ) {
 
-			if ( landmark.image > ( this->images.size() - 1 ) ) continue;
-			float distance2 = 0;
 			const auto &pt = this->images[ landmark.image ].points[ landmark.point ];
 			float d2 = vtkMath::Distance2BetweenPoints( pt.xyz2, center );
 			fs << sqrt( d2 ) << "," << name << "," << landmark.image << endl;
