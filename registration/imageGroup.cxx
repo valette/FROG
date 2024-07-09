@@ -261,20 +261,18 @@ inline void vtkBSplineTransformWeights( double F[ 4 ], double f ) {
 double ImageGroup::updateDeformableTransforms( const float alpha ) {
 
 	double sDistances = 0, sWeights = 0;
+	const float constraintWeight = this->images.size() * this->landmarksConstraintsWeight;
 
 	#pragma omp parallel for reduction( +:sDistances, sWeights )
 	for ( int image1 = this->numberOfFixedImages; image1 < this->images.size(); image1++ ) {
 
 		Image &image = this->images[ image1 ];
 		float *gradient = ( float* ) image.gradient->GetScalarPointer();
-		int dims[ 3 ];
-		vtkIdType increments[ 3 ];
-		double spacing[ 3 ];
-		double origin[ 3 ];
-		image.gradient->GetSpacing( spacing );
-		image.gradient->GetOrigin( origin );
-		image.gradient->GetDimensions( dims );
-		image.gradient->GetIncrements( increments );
+		const auto dims = image.gradient->GetDimensions();
+		const auto increments = image.gradient->GetIncrements();
+		const auto spacing = image.gradient->GetSpacing();
+		const auto origin = image.gradient->GetOrigin();
+
 		double weights[ 3 ][ 4 ];
 		int nValues = 4 * dims[ 0 ] * dims[ 1 ] * dims[ 2 ];
 		for ( int i = 0; i < nValues; i++ ) gradient[ i ] = 0;
@@ -317,8 +315,7 @@ double ImageGroup::updateDeformableTransforms( const float alpha ) {
 				Point *pointB = &image2->points[ link.point ];
 				float *pB = pointB->xyz2;
 				float dist = sqrt( vtkMath::Distance2BetweenPoints( pA, pB ) );
-				float weight = this->landmarksConstraintsWeight;
-
+				float weight = constraintWeight;
 				sDistances += weight *weight * dist * dist;
 				sWeights += weight * weight;
 				weight *= weight;
@@ -411,7 +408,7 @@ double ImageGroup::updateDeformableTransforms( const float alpha ) {
 	}
 
 	// substract average displacement on all transforms;
-	int nImages = this->images.size();
+	const int nImages = this->images.size();
 	float *coeffs[ nImages ];
 	int dims[ 3 ];
 	double spacing[ 3 ];
@@ -425,7 +422,7 @@ double ImageGroup::updateDeformableTransforms( const float alpha ) {
 
 	}
 
-	int nValues = dims[ 0 ] * dims[ 1 ] * dims[ 2 ];
+	const int nValues = dims[ 0 ] * dims[ 1 ] * dims[ 2 ];
 	int nBigCoeffs = 0;
 	int direction = 0;
 	const float maxD = this->maxDisplacementRatio;
@@ -520,9 +517,9 @@ void ImageGroup::updateStats() {
 			const float *pA = point.xyz2;
 			for ( auto const &link : point.links ) {
 
-				Image *image2 = &this->images[ link.image ];
-				Point *pointB = &image2->points[ link.point ];
-				float *pB = pointB->xyz2;
+				const Image *image2 = &this->images[ link.image ];
+				const Point *pointB = &image2->points[ link.point ];
+				const float *pB = pointB->xyz2;
 				float dist2 = vtkMath::Distance2BetweenPoints( pA, pB );
 				stats->addSample( sqrt( dist2 ) );
 
@@ -1149,11 +1146,10 @@ void ImageGroup::addLandmarks( const char *path, bool asConstraints ) {
 				pt.xyz[ j ] = stof( coord );
 				if ( j < 2 && this->invertLandmarksCoordinates )
 					pt.xyz[ j ] *= -1; // get opposite x and y coordinates!
-				for ( int k = 0; k < 3; k++ )
-					pt.original_xyz[ k ] = pt.xyz[ k ];
 
 			}
 
+			for ( int k = 0; k < 3; k++ ) pt.original_xyz[ k ] = pt.xyz[ k ];
 			points.push_back( pt );
 			this->landmarks[ name ].push_back( landmark );
 			constraints[ name ].push_back( landmark );
