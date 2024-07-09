@@ -843,15 +843,8 @@ void ImageGroup::displayStats() {
 void ImageGroup::transformPoints( bool apply ) {
 
 	#pragma omp parallel for
-	for ( int i = this->numberOfFixedImages; i < this->images.size() ; i++ ) {
-
-		auto &image = this->images[ i ];
-		image.transformPoints();
-		if ( !apply ) continue;
-		for ( auto &point : image.points )
-			for ( int k = 0; k < 3; k++ ) point.xyz[ k ] = point.xyz2[ k ];
-
-	}
+	for ( int i = this->numberOfFixedImages; i < this->images.size() ; i++ )
+		this->images[ i ].transformPoints( apply );
 
 }
 

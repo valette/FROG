@@ -15,7 +15,7 @@ public:
 
 	void expandBoundingBox( float *box );
 
-	void transformPoints();
+	void transformPoints(  bool apply = false );
 
 	vtkAbstractTransform *transform;
 	vtkSmartPointer<vtkImageData> gradient;
