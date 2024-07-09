@@ -1008,7 +1008,7 @@ double ImageGroup::updateLinearTransforms() {
 		double sPosB2[ 3 ] = { 0, 0, 0 };
 		double sWeight = 0;
 		Image &image = this->images[ image1 ];
-		Stats *statsA = &image.stats;
+		Stats &statsA = image.stats;
 
 		for ( auto const &pointA : image.points ) {
 
@@ -1016,9 +1016,8 @@ double ImageGroup::updateLinearTransforms() {
 
 			for ( auto const &link : pointA.links ) {
 
-				Image *image2 = &this->images[ link.image ];
-				Point *pointB = &image2->points[ link.point ];
-				float *pB = pointB->xyz2;
+				Image &image2 = this->images[ link.image ];
+				float *pB = image2.points[ link.point ].xyz2;
 				float dist = 0;
 
 				for ( int k = 0; k < 3; k++ ) {
@@ -1029,8 +1028,8 @@ double ImageGroup::updateLinearTransforms() {
 				}
 
 				dist = sqrt( dist );
-				float probA = statsA->getInlierProbability( dist );
-				float probB = image2->stats.getInlierProbability( dist );
+				float probA = statsA.getInlierProbability( dist );
+				float probB = image2.stats.getInlierProbability( dist );
 				float weight = std::min( probA, probB );
 
 				sDistances += weight * weight * dist * dist;
