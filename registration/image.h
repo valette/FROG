@@ -2,6 +2,7 @@
 
 #include <vtkGeneralTransform.h>
 #include <vtkImageData.h>
+#include <vtkSmartPointer.h>
 
 #include "point.h"
 
@@ -17,10 +18,10 @@ public:
 	void transformPoints();
 
 	vtkAbstractTransform *transform;
-	vtkImageData *gradient;
+	vtkSmartPointer<vtkImageData> gradient;
 
-	vtkGeneralTransform *allTransforms;
+	vtkSmartPointer<vtkGeneralTransform> allTransforms;
 
-	Image () : gradient( 0 ), transform( 0 ), allTransforms( 0 ) {};
+	Image () : transform( 0 ) {};
 
 };

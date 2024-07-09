@@ -216,25 +216,24 @@ void ImageGroup::setupDeformableTransforms( int level ) {
 	#pragma omp parallel for
 	for ( int i = this->numberOfFixedImages; i < this->images.size(); i++ ) {
 
-		vtkImageData *coeffs = vtkImageData::New();
+		vtkNew<vtkImageData> coeffs;
 		coeffs->SetOrigin( origin );
 		coeffs->SetSpacing( spacing );
 		coeffs->SetDimensions( dims );
 		coeffs->AllocateScalars( VTK_FLOAT, 3 );
 		coeffs->GetPointData()->GetScalars()->Fill( 0 );
-		vtkBSplineTransform *transform = vtkBSplineTransform::New();
+		vtkNew<vtkBSplineTransform> transform;
 		transform->SetCoefficientData( coeffs );
 		transform->SetBorderModeToZero();
-		Image *image = &this->images[ i ];
-		image->allTransforms->Concatenate( transform );
-		image->transform = transform;
-		if ( image->gradient ) image->gradient->Delete();
-		vtkImageData *gradient = vtkImageData::New();
+		Image &image = this->images[ i ];
+		image.allTransforms->Concatenate( transform );
+		image.transform = transform;
+		vtkNew<vtkImageData> gradient;
 		gradient->SetOrigin( origin );
 		gradient->SetSpacing( spacing );
 		gradient->SetDimensions( dims );
 		gradient->AllocateScalars( VTK_FLOAT, 4 );
-		image->gradient = gradient;
+		image.gradient = gradient;
 
 	}
 
@@ -243,15 +242,14 @@ void ImageGroup::setupDeformableTransforms( int level ) {
 // inspired from vtkBSplineTransform.cxx
 inline void vtkBSplineTransformWeights( double F[ 4 ], double f ) {
 
-  const double sixth = 1.0/6.0;
-  const double half = 0.5;
+	const double sixth = 1.0/6.0;
+	const double half = 0.5;
+	const double f2 = f * f;
 
-  double f2 = f * f;
-
-  F[ 3 ] = f2 * f * sixth;
-  F[ 0 ] = ( f2 - f ) * half - F[ 3 ] + sixth;
-  F[ 2 ] = f + F[ 0 ] - F[ 3 ] * 2;
-  F[ 1 ] = 1 - F[ 0 ] - F[ 2 ] - F[ 3 ];
+	F[ 3 ] = f2 * f * sixth;
+	F[ 0 ] = ( f2 - f ) * half - F[ 3 ] + sixth;
+	F[ 2 ] = f + F[ 0 ] - F[ 3 ] * 2;
+	F[ 1 ] = 1 - F[ 0 ] - F[ 2 ] - F[ 3 ];
 
 }
 
@@ -768,19 +766,18 @@ void ImageGroup::setupLinearTransforms() {
 	// center volumes
 	for ( int i = this->numberOfFixedImages; i < this->images.size() ; i++) {
 
-		Image *image = &this->images[ i ];
-		image->transform = vtkMatrixToLinearTransform::New();
-		image->allTransforms = vtkGeneralTransform::New();
-		image->allTransforms->PostMultiply();
-		image->allTransforms->Concatenate( image->transform );
-
-		vtkMatrix4x4 *matrix = vtkMatrix4x4::New();
+		Image &image = this->images[ i ];
+		image.transform = vtkMatrixToLinearTransform::New();
+		image.allTransforms = vtkGeneralTransform::New();
+		image.allTransforms->PostMultiply();
+		image.allTransforms->Concatenate( image.transform );
+		vtkNew<vtkMatrix4x4> matrix;
 		matrix->Identity();
 
 		for ( int j = 0; j < 3; j++ )
 			matrix->SetElement( j, 3, averageAnchor[ j ] - anchors[ i ][ j ] );
 
-		( ( vtkMatrixToLinearTransform *) image->transform )->SetInput( matrix );
+		( ( vtkMatrixToLinearTransform *) image.transform )->SetInput( matrix );
 
 	}
 
@@ -1363,32 +1360,30 @@ void ImageGroup::readAndApplyFixedImagesTransforms() {
 	#pragma omp parallel for
 	for ( int i = 0; i < this->numberOfFixedImages; i++ ) {
 
-		Image *image = &this->images[ i ];
+		Image &image = this->images[ i ];
 
 		if ( this->fixedTransformsDirectory ) {
 
 			ostringstream file;
 			file << this->fixedTransformsDirectory << "/" << i << ".json";
-			image->allTransforms = readTransform( file.str().c_str() );
+			image.allTransforms = readTransform( file.str().c_str() );
 
 		} else {
 
-			image->transform = vtkMatrixToLinearTransform::New();
-			image->allTransforms = vtkGeneralTransform::New();
-			image->allTransforms->PostMultiply();
-			image->allTransforms->Concatenate( image->transform );
-			vtkMatrix4x4 *matrix = vtkMatrix4x4::New();
+			image.transform = vtkMatrixToLinearTransform::New();
+			image.allTransforms = vtkGeneralTransform::New();
+			image.allTransforms->PostMultiply();
+			image.allTransforms->Concatenate( image.transform );
+			vtkNew<vtkMatrix4x4> matrix;
 			matrix->Identity();
-			( ( vtkMatrixToLinearTransform *) image->transform )->SetInput( matrix );
+			( ( vtkMatrixToLinearTransform *) image.transform )->SetInput( matrix );
 
 		}
 
-		for ( auto point = image->points.begin(); point != image->points.end(); point++ ) {
+		for ( auto &point : image.points ) {
 
-			image->allTransforms->TransformPoint( point->xyz, point->xyz2 );
-
-			for ( int k = 0; k < 3; k++ )
-				point->xyz[ k ] = point->xyz2[ k ];
+			image.allTransforms->TransformPoint( point.xyz, point.xyz2 );
+			for ( int k = 0; k < 3; k++ ) point.xyz[ k ] = point.xyz2[ k ];
 
 		}
 
