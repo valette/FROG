@@ -2,25 +2,16 @@
 
 void Image::transformPoints() {
 
-	Point *point = &this->points[ 0 ];
-
-	for ( int j = 0; j < this->points.size(); j++ ) {
-
-		this->transform->TransformPoint ( point->xyz, point->xyz2 );
-
-		point++;
-
-	}
-
+	for ( auto &point : this->points )
+		this->transform->TransformPoint ( point.xyz, point.xyz2 );
 
 }
 
 void Image::expandBoundingBox( float *box ) {
 
-	Point *point = &this->points[ 0 ];
-	for ( int i = 0; i < this->points.size(); i++) {
+	for ( const auto &point : this->points ) {
 
-		float *xyz = point->xyz;
+		const float *xyz = point.xyz;
 
 		for ( int k = 0; k < 3; k++ ) {
 
@@ -29,7 +20,6 @@ void Image::expandBoundingBox( float *box ) {
 
 		}
 
-		point++;
 	}
 
 }
