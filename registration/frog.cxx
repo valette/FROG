@@ -3,12 +3,11 @@
 
 #include "imageGroup.h"
 
-using namespace std;
+using std::cout, std::endl;
 
 int main( int argc, char *argv[] ) {
 
-	chrono::time_point< chrono::system_clock> start, end;
-	start = chrono::system_clock::now();
+	auto start = std::chrono::system_clock::now();
 	ImageGroup group;
 
 	if ( argc < 2 ) {
@@ -215,8 +214,8 @@ int main( int argc, char *argv[] ) {
 	}
 
 	group.run();
-	end = chrono::system_clock::now();
-	cout << "Total time : " << chrono::duration<float>(end-start).count() << "s" << endl;
+	auto end = std::chrono::system_clock::now();
+	cout << "Total time : " << std::chrono::duration<float>(end-start).count() << "s" << endl;
 	return 0;
 
 }

@@ -10,7 +10,7 @@ class Image {
 public:
 
 	double refTranslation[ 3 ];
-	vector< Point > points;
+	std::vector< Point > points;
 	Stats stats;
 
 	void expandBoundingBox( float *box );

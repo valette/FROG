@@ -108,7 +108,7 @@ protected:
 	void setupDeformableTransforms( int level );
 	void setupLinearTransforms();
 
-	typedef pair< int, vtkMatrix4x4* > RANSACResult;
+	typedef std::pair< int, vtkMatrix4x4* > RANSACResult;
 	void RANSAC( int image );
 	RANSACResult RANSACBatch( int image, int nIterations, int batch );
 

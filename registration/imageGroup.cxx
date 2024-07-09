@@ -26,8 +26,6 @@
 
 #include "imageGroup.h"
 
-using namespace std;
-
 void checkNaN( float value ) {
 
 	if ( !isnan( value ) ) return;
@@ -84,7 +82,7 @@ void ImageGroup::run() {
 
 	if ( this->deformableLevels ) {
 		cout << endl << "Deformable registration" << endl;
-		vector< int > nGrids;
+		std::vector< int > nGrids;
 		this->countInliers();
 
 		for ( int level = 0; level < this->deformableLevels; level++ ) {
@@ -287,7 +285,7 @@ double ImageGroup::updateDeformableTransforms( const float alpha ) {
 				float dist = sqrt( vtkMath::Distance2BetweenPoints( pA, pB ) );
 				float probA = statsA->getInlierProbability( dist );
 				float probB = image2->stats.getInlierProbability( dist );
-				float weight = min( probA, probB );
+				float weight = std::min( probA, probB );
 
 				sDistances += weight *weight * dist * dist;
 				sWeights += weight * weight;
@@ -557,14 +555,13 @@ void ImageGroup::displayLinearTransforms() {
 
 void ImageGroup::RANSAC( int imageId ) {
 
-	chrono::time_point< chrono::system_clock> start, end;
-	start = chrono::system_clock::now();
+	auto start = std::chrono::system_clock::now();
 	cout << "RANSAC registration for image " << imageId << ": "<<std::flush;
 
 	Image *image = &this->images[ imageId ];
 	int nBatches = omp_get_num_procs();
 	int batchIterations = numberOfRANSACIterations / nBatches;
-	vector < RANSACResult > results;
+	std::vector < RANSACResult > results;
 
 	#pragma omp parallel for
 	for ( int i = 0; i < nBatches; i++ ) {
@@ -631,8 +628,8 @@ void ImageGroup::RANSAC( int imageId ) {
 	trans->Delete();
 	source->Delete();
 	target->Delete();
-	end = chrono::system_clock::now();
-	cout << maxNumberOfInliers << " inliers, computed in " << chrono::duration<float>(end - start).count() << "s" << endl;
+	auto end = std::chrono::system_clock::now();
+	cout << maxNumberOfInliers << " inliers, computed in " << std::chrono::duration<float>(end - start).count() << "s" << endl;
 
 	if ( this->stats[ "RANSAC" ].is<picojson::null>() )
 		this->stats[ "RANSAC" ] = picojson::value( picojson::array() );
@@ -664,7 +661,7 @@ ImageGroup::RANSACResult ImageGroup::RANSACBatch( int imageId, int nIterations, 
 
 	auto &pts = image->points;
 	int nPoints = pts.size();
-	mt19937 rng( batch * 1000 );
+	std::mt19937 rng( batch * 1000 );
 
 	for ( int i = 0; i < nIterations; i++ ) {
 
@@ -729,7 +726,7 @@ ImageGroup::RANSACResult ImageGroup::RANSACBatch( int imageId, int nIterations, 
 	source->Delete();
 	target->Delete();
 	trans->Delete();
-	return make_pair( maxNumberOfInliers, matrix );
+	return std::make_pair( maxNumberOfInliers, matrix );
 
 }
 
@@ -793,7 +790,7 @@ void ImageGroup::saveDistanceHistograms( const char *file ) {
 
 		Stats *stats = &this->images[ i ].stats;
 		stats->getHistogram();
-		maxSize = max( maxSize, ( int ) stats->histogram.size() );
+		maxSize =std:: max( maxSize, ( int ) stats->histogram.size() );
 		fs << "image " << i ;
 		if ( i < this->images.size() - 1 ) fs << ",";
 			else fs << endl;
@@ -824,7 +821,7 @@ void ImageGroup::saveIndividualDistanceHistograms() {
 
 	for ( int i = 0; i < this->images.size(); i++) {
 
-		ostringstream file;
+		std::ostringstream file;
 		file << "histogram" << i << ".csv";
 		this->images[ i ].stats.saveHistogram( file.str().c_str() );
 
@@ -858,7 +855,7 @@ void ImageGroup::transformPoints( bool apply ) {
 
 }
 
-bool comparePairs( const vector< float > &p1, const vector< float > & p2) {
+bool comparePairs( const std::vector< float > &p1, const std::vector< float > & p2) {
 
     return ( p1[ 4 ] < p2[ 4 ] );
 
@@ -866,7 +863,7 @@ bool comparePairs( const vector< float > &p1, const vector< float > & p2) {
 
 void ImageGroup::writeLinksDistances() {
 
-	vector < vector< float > > pairs;
+	std::vector < std::vector< float > > pairs;
 
 	for ( int i1 = 0; i1 < this->images.size(); i1++ ) {
 
@@ -886,7 +883,7 @@ void ImageGroup::writeLinksDistances() {
 				Point *pointB = &image2->points[ p2 ];
 				float *pB = pointB->xyz2;
 				float dist = sqrt( vtkMath::Distance2BetweenPoints( pA, pB ) );
-				vector< float > pair;
+				std::vector< float > pair;
 				pair.push_back( i1 );
 				pair.push_back( p1 );
 				pair.push_back( i2 );
@@ -903,15 +900,15 @@ void ImageGroup::writeLinksDistances() {
 
     sort( pairs.begin(), pairs.end(), comparePairs );
 
-	ofstream file( "pairs.csv.gz", ios_base::out | ios_base::binary);
+	std::ofstream file( "pairs.csv.gz", std::ios_base::out | std::ios_base::binary);
 	boost::iostreams::filtering_streambuf<boost::iostreams::output> outbuf;
     outbuf.push(boost::iostreams::gzip_compressor());
     outbuf.push(file);
-    ostream out(&outbuf);
+    std::ostream out(&outbuf);
 
 	for ( int i = 0; i < pairs.size(); i++ ) {
 
-		vector< float > &pair = pairs[ i ];
+		std::vector< float > &pair = pairs[ i ];
 
 		for ( int j = 0; j < pair.size(); j++ ) {
 
@@ -961,7 +958,7 @@ void ImageGroup::countInliers() {
 				float dist = sqrt( vtkMath::Distance2BetweenPoints( pA, pB ) );
 				float probA = statsA->getInlierProbability( dist );
 				float probB = image2->stats.getInlierProbability( dist );
-				float weight = min( probA, probB );
+				float weight = std::min( probA, probB );
 				nPairsLocal++;
 
 				if ( weight < this->inlierThreshold )
@@ -1041,7 +1038,7 @@ double ImageGroup::updateLinearTransforms() {
 				dist = sqrt( dist );
 				float probA = statsA->getInlierProbability( dist );
 				float probB = image2->stats.getInlierProbability( dist );
-				float weight = min( probA, probB );
+				float weight = std::min( probA, probB );
 
 				sDistances += weight * weight * dist * dist;
 				sWeights += weight * weight;
@@ -1104,25 +1101,25 @@ void ImageGroup::setupStats() {
 
 void ImageGroup::addLandmarks( const char *path, bool asConstraints ) {
 
-	vector < string > files;
+	std::vector < std::string > files;
 	std::map < std::string, Landmarks > constraints;
 
-	for( const auto &p: filesystem::directory_iterator( path ) )
+	for( const auto &p: std::filesystem::directory_iterator( path ) )
 		files.push_back ( p.path() );
 
 	sort( files.begin(), files.end() );
 
 	for ( int i = 0; i < files.size(); i++ ) {
 
-		ifstream infile( files[ i ] );
-		string line;
+		std::ifstream infile( files[ i ] );
+		std::string line;
 		if ( i > this->images.size() - 1 ) continue;
 
 		while ( getline( infile, line ) ) {
 
 			if ( line[ 0 ] == '#' ) continue;
 			int pos = line.find( ',');
-			string name = line.substr( 0, pos );
+			std::string name = line.substr( 0, pos );
 			line.erase( 0, pos + 1 );
 			Landmark landmark;
 			landmark.image = i;
@@ -1133,7 +1130,7 @@ void ImageGroup::addLandmarks( const char *path, bool asConstraints ) {
 			for ( int j = 0; j < 3; j++ ) {
 
 				int pos = line.find( ',');
-				string coord = line.substr( 0, pos );
+				std::string coord = line.substr( 0, pos );
 				line.erase( 0, pos + 1 );				
 				pt.xyz[ j ] = stof( coord );
 				if ( j < 2 && this->invertLandmarksCoordinates )
@@ -1174,7 +1171,7 @@ void ImageGroup::addLandmarks( const char *path, bool asConstraints ) {
 bool ImageGroup::computeLandmarkDistances( Measure &measure ) {
 
 	if ( !this->landmarks.size() ) return false;
-	vector< float > distances;
+	std::vector< float > distances;
 
 	for ( auto const &[name, currentLandmarks] : this->landmarks) {
 
@@ -1197,13 +1194,13 @@ bool ImageGroup::computeLandmarkDistances( Measure &measure ) {
 
 	}
 
-	double sum = accumulate( distances.begin(), distances.end(), 0.0 );
+	double sum = std::accumulate( distances.begin(), distances.end(), 0.0 );
 	double mean = sum / distances.size();
 
 	double sq_sum = std::inner_product( distances.begin(), distances.end(),
 		distances.begin(), 0.0 );
 
-	auto max = max_element( distances.begin(), distances.end());
+	auto max = std::max_element( distances.begin(), distances.end());
 
 	double stdev = sqrt( sq_sum / distances.size() - mean * mean);
 	cout << ", " << distances.size() << " landmarks:max=" << *max
@@ -1364,7 +1361,7 @@ void ImageGroup::readAndApplyFixedImagesTransforms() {
 
 		if ( this->fixedTransformsDirectory ) {
 
-			ostringstream file;
+			std::ostringstream file;
 			file << this->fixedTransformsDirectory << "/" << i << ".json";
 			image.allTransforms = readTransform( file.str().c_str() );
 
@@ -1393,14 +1390,14 @@ void ImageGroup::readAndApplyFixedImagesTransforms() {
 
 void ImageGroup::saveTransforms() {
 
-	filesystem::create_directory( this->transformSubdirectory.c_str() );
+	std::filesystem::create_directory( this->transformSubdirectory.c_str() );
 
 	// output to .json
 	#pragma omp parallel for
 	for ( int image1 = this->numberOfFixedImages; image1 < this->images.size(); image1++) {
 
 		vtkGeneralTransform *trans = this->images[ image1 ].allTransforms;
-		ostringstream file;
+		std::ostringstream file;
 		file << this->transformSubdirectory << "/" << image1 << ".json";
 		writeFrogJSON( trans, file.str().c_str(), !this->writeSingleFileTransforms );
 

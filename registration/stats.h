@@ -6,8 +6,6 @@
 #ifndef STATS_H
 #define STATS_H
 
-using namespace std;
-
 // compute Chi probability (from normalized values)
 inline float chipdf( const float &x ) {
 
@@ -25,15 +23,15 @@ public:
 	static int maxIterations;
 	static float epsilon;
 
-	vector< float > samples;
-	vector< float > weights;
+	std::vector< float > samples;
+	std::vector< float > weights;
 	int size;
 	int virtualSize;
 	float c1,c2,ratio;
-	mt19937 rng;
+	std::mt19937 rng;
 	bool needsRandom;
 
-	vector < float > histogram;
+	std::vector < float > histogram;
 
 	void addSlot() {
 
