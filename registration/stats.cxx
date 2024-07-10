@@ -7,8 +7,6 @@
 
 #define print( v, size ) { for (int __i = 0; __i < size; __i++ ) { std::cout << v[ __i ]; if ( __i < ( size - 1 ) ) std::cout<< " " ;} std::cout << std::endl;}
 
-using namespace std;
-
 int Stats::maxSize = 10000;
 int Stats::maxIterations = 10000;
 float Stats::epsilon = 1e-6;
@@ -41,12 +39,12 @@ void Stats::estimateDistribution() {
 
 		}
 
-		sum2 = max( sum2, epsilon);
-		sum3 = max( sum3, epsilon);
-		sum5 = max( sum5, epsilon);
-		float nc1 = max( epsilon, sum1 / sum2 / esp );
-		float nc2 = max( epsilon, sum3 / sum4 / esp );
-		float nRatio = max( epsilon, sum2 / sum5 );
+		sum2 = std::max( sum2, epsilon);
+		sum3 = std::max( sum3, epsilon);
+		sum5 = std::max( sum5, epsilon);
+		float nc1 = std::max( epsilon, sum1 / sum2 / esp );
+		float nc2 = std::max( epsilon, sum3 / sum4 / esp );
+		float nRatio = std::max( epsilon, sum2 / sum5 );
 
 		if ( abs( ( c1 - nc1 ) / nc1 ) < 0.001
 			&& abs( ( c2 - nc2 ) / nc2 ) < 0.001
@@ -74,12 +72,12 @@ void Stats::estimateDistribution() {
 void Stats::displayParameters() {
 
 	int s = this->size;
-	cout << "c1=" << c1 << ",";
-	cout << "c2=" << c2 << ",";
-	cout << "r=" << ratio << ",";
-	cout << "nSamples=" << s;
+	std::cout << "c1=" << c1 << ",";
+	std::cout << "c2=" << c2 << ",";
+	std::cout << "r=" << ratio << ",";
+	std::cout << "nSamples=" << s;
 
-	double sum = accumulate( samples.begin(), samples.begin() + s , 0.0 );
+	double sum = std::accumulate( samples.begin(), samples.begin() + s , 0.0 );
 	double mean = sum / s;
 
 	double sq_sum = std::inner_product( samples.begin(), samples.begin() + s,
@@ -88,8 +86,8 @@ void Stats::displayParameters() {
 	auto max = max_element( samples.begin(), samples.begin() + s );
 
 	double stdev = sqrt( sq_sum / s - mean * mean);
-	cout <<",max=" << *max
-		<< ",mean="<< mean << ",stdev=" << stdev << endl;
+	std::cout <<",max=" << *max
+		<< ",mean="<< mean << ",stdev=" << stdev << std::endl;
 
 
 }
@@ -102,7 +100,7 @@ void Stats::saveHistogram( const char *file ) {
 	fs.open ( file, std::fstream::out | std::fstream::trunc );
 
 	for ( int i = 0; i < this->histogram.size(); i++ )
-		fs << histogram[ i ] << endl;
+		fs << histogram[ i ] << std::endl;
 
 	fs.close();
 
@@ -114,7 +112,7 @@ void Stats::saveSamples( const char *file, int subsampling ) {
 	fs.open ( file, std::fstream::out | std::fstream::trunc );
 
 	for ( int i = 0; i < this->size; i++ )
-		if ( !( i % subsampling ) ) fs << this->samples[ i ] << endl;
+		if ( !( i % subsampling ) ) fs << this->samples[ i ] << std::endl;
 
 	fs.close();
 
@@ -122,24 +120,12 @@ void Stats::saveSamples( const char *file, int subsampling ) {
 
 void Stats::getHistogram( float binSize ) {
 
-	float max = 0;
-
-	for ( int i = 0; i < this->size; i++ ) {
-
-		if ( max < this->samples[ i ] ) max = this->samples[ i ];
-
-	}
-
+	float max = *std::max_element( samples.begin(), samples.begin() + this->size );
 	int size = round( max / binSize ) + 1;
 	this->histogram.resize( size );
+	std::fill( this->histogram.begin(), this->histogram.begin() + size, 0 );
 
-	for ( int i = 0; i < size; i++ ) this->histogram[ i ] = 0;
-
-	for ( int i = 0; i < this->size; i++ ) {
-
-		int position = round( this->samples[ i ] / binSize );
-		this->histogram[ position ]++;
-
-	}
+	for ( int i = 0; i < this->size; i++ )
+		this->histogram[ round( this->samples[ i ] / binSize ) ]++;
 
 }
