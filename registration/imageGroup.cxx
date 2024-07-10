@@ -765,7 +765,7 @@ void ImageGroup::setupLinearTransforms() {
 
 		Image &image = this->images[ i ];
 		image.transform = vtkMatrixToLinearTransform::New();
-		image.allTransforms = vtkGeneralTransform::New();
+		image.allTransforms = vtkSmartPointer<vtkGeneralTransform>::New();
 		image.allTransforms->PostMultiply();
 		image.allTransforms->Concatenate( image.transform );
 		vtkNew<vtkMatrix4x4> matrix;
