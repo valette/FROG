@@ -112,7 +112,7 @@ protected:
 	void RANSAC( int image );
 	RANSACResult RANSACBatch( int image, int nIterations, int batch );
 
-	void transformPoints( bool apply = false );
+	void transformPoints( const bool &apply = false );
 
 	void updateStats(); // compute Maxwell distribution parameters
 	void countInliers(); // displays number of inliers/outliers
@@ -126,7 +126,7 @@ protected:
 	void saveIndividualDistanceHistograms();
 	void saveDistanceHistograms( const char *file );
 	void saveMeasures( const char *file );
-	void getBoundingBox( float *box, bool all = false );
+	void getBoundingBox( vtkBoundingBox &box, const bool &all = false );
 
 	void saveTransforms();
 	void saveBoundingBox();

@@ -1,5 +1,6 @@
 #include <vector>
 
+#include <vtkBoundingBox.h>
 #include <vtkGeneralTransform.h>
 #include <vtkImageData.h>
 #include <vtkSmartPointer.h>
@@ -13,7 +14,7 @@ public:
 	std::vector< Point > points;
 	Stats stats;
 
-	void expandBoundingBox( float *box );
+	void addPoints( vtkBoundingBox &box );
 
 	void transformPoints(  bool apply = false );
 

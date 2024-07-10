@@ -14,6 +14,7 @@
 #include <boost/iostreams/copy.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
 
+#include <vtkBoundingBox.h>
 #include <vtkBSplineTransform.h>
 #include <vtkImageData.h>
 #include <vtkLandmarkTransform.h>
@@ -172,36 +173,29 @@ void ImageGroup::run() {
 void ImageGroup::setupDeformableTransforms( int level ) {
 
 	double size = this->initialGridSize / pow( 2, level ); // grid size
-	float box[ 6 ];
 	double spacing[ 3 ];
 	double length[ 3 ];
 	int dims[ 3 ];
 	double origin[ 3 ];
+	vtkBoundingBox box;
 	this->getBoundingBox( box );
-
-	// add margin to bounding box
-	for ( int k = 0; k < 3; k++ ) {
-
-		float length = box[ 1 + 2 * k ] - box[ 2 * k ];
-		float margin = length * this->boundingBoxMargin;
-		box[ 1 + 2 * k ] += margin;
-		box[ 2 * k ] -= margin;
-
-	}
+	box.ScaleAboutCenter( 1 + 2 * this->boundingBoxMargin );
 
 	for ( int k = 0; k < 3; k++ ) {
 
-		length[ k ] = box[ 1 + 2 * k ] - box[ 2 * k ];
+		length[ k ] = box.GetLength( k );
 		dims[ k ] = round( length[ k ] / size );
 		if ( dims[ k ] < 1 ) dims[ k ] = 1;
 		spacing[ k ] = length[ k ] / dims[ k ];
-		origin[ k ] = box[ 2 * k ] - spacing[ k ];
+		origin[ k ] = box.GetBound(  2 * k ) - spacing[ k ];
 		dims[ k ] += 3;
 
 	}
 
 	cout << "Bounding box : ";
-	print( box, 6 );
+	double bbox[ 6 ];
+	box.GetBounds( bbox );
+	print( bbox, 6 );
 	cout << "Box length : ";
 	print( length, 3 );
 	cout << "Grid origin : ";
@@ -732,26 +726,20 @@ ImageGroup::RANSACResult ImageGroup::RANSACBatch( int imageId, int nIterations, 
 
 void ImageGroup::setupLinearTransforms() {
 
-	float box[ 6 ];
+	vtkBoundingBox box;
 	float anchors[ this->images.size() ][ 3 ];
 	float averageAnchor[ 3 ] = { 0, 0, 0 };
 	float *anchorPosition = this->linearInitializationAnchor;
 
 	for ( int i = 0; i < this->images.size(); i++ ) {
 
-		for ( int j = 0; j < 3; j++ ) {
-
-			box[ 2 * j ] = 1e9;
-			box[ 2 * j + 1 ] = -1e9;
-
-		}
-
-		this->images[ i ].expandBoundingBox( box );
+		box.Reset();
+		this->images[ i ].addPoints( box );
 
 		for ( int j = 0; j < 3; j++ ) {
 
 			float c = anchorPosition[ j ];
-			float anchor = ( 1 - c ) * box[ 2 * j ] + c * box[ 1 + 2 * j ];
+			float anchor = ( 1 - c ) * box.GetBound( 2 * j ) + c * box.GetBound( 1 + 2 * j );
 			anchors[ i ][ j ] = anchor;
 			if ( i < this->images.size() - this->numberOfFixedImages )
 				averageAnchor[ j ] += anchor / ( float ) ( this->images.size() - this->numberOfFixedImages );
@@ -840,7 +828,7 @@ void ImageGroup::displayStats() {
 
 }
 
-void ImageGroup::transformPoints( bool apply ) {
+void ImageGroup::transformPoints( const bool &apply ) {
 
 	#pragma omp parallel for
 	for ( int i = this->numberOfFixedImages; i < this->images.size() ; i++ )
@@ -1417,14 +1405,14 @@ void ImageGroup::saveMeasures( const char *file ) {
 
 void ImageGroup::saveBoundingBox() {
 
-	float box[ 6 ];
+	vtkBoundingBox box;
 	picojson::array min, max;
 	this->getBoundingBox( box, true );
 
 	for ( int i = 0; i < 3; i++ ) {
 
-		min.push_back( picojson::value( box[ 2 * i ] ) );
-		max.push_back( picojson::value( box[ 1 + 2 * i ] ) );
+		min.push_back( picojson::value( box.GetBound(  2 * i ) ) );
+		max.push_back( picojson::value( box.GetBound(  1 + 2 * i  ) ) );
 
 	}
 
@@ -1435,18 +1423,17 @@ void ImageGroup::saveBoundingBox() {
 
 }
 
-void ImageGroup::getBoundingBox( float *box, bool all ) {
+void ImageGroup::getBoundingBox( vtkBoundingBox &box, const bool &all ) {
 
-	for ( int i = 0; i < 3; i++ ) {
+	box.Reset();
 
-		box[ 2 * i ] = 1e9;
-		box[ 2 * i + 1 ] = -1e9;
-
-	}
-
+	#pragma omp parallel for
 	for (int i = all ? 0 : this->numberOfFixedImages; i < this->images.size(); i++ ) {
 
-		this->images[ i ].expandBoundingBox( box );
+		vtkBoundingBox localBox;
+		this->images[ i ].addPoints( localBox );
+		#pragma omp critical
+		box.AddBox( localBox );
 
 	}
 

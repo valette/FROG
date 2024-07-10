@@ -12,19 +12,11 @@ void Image::transformPoints( bool apply ) {
 
 }
 
-void Image::expandBoundingBox( float *box ) {
+void Image::addPoints( vtkBoundingBox &box ) {
 
 	for ( const auto &point : this->points ) {
-
-		const float *xyz = point.xyz;
-
-		for ( int k = 0; k < 3; k++ ) {
-
-			if ( xyz[ k ] < box[ 2 * k ] ) box[ 2 * k ] = xyz[ k ];
-			if ( xyz[ k ] > box[ 2 * k + 1 ] ) box[ 2 * k + 1 ] = xyz[ k ];
-
-		}
-
+		double p[ 3 ] = { point.xyz[ 0 ], point.xyz[ 1 ], point.xyz[ 2 ] };
+		box.AddPoint( p );
 	}
 
 }
