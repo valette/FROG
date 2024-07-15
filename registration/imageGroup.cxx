@@ -27,14 +27,6 @@
 
 #include "imageGroup.h"
 
-void checkNaN( float value ) {
-
-	if ( !isnan( value ) ) return;
-	cout << endl << "Error : NaN" << endl;
-	exit( 1 );
-
-}
-
 void ImageGroup::run() {
 
 	// read transform if there are fixed images
@@ -60,19 +52,15 @@ void ImageGroup::run() {
 		cout << endl << "Linear registration" << endl;
 		for ( int iteration = 0; iteration < this->linearIterations; iteration++ ) {
 
-			Measure measure;
 			cout << "Linear registration, iteration " << iteration + 1
 				<< "/" << this->linearIterations << endl;
 
 			if ( !( iteration % this->statIntervalUpdate ) ) this->updateStats();
 			if ( this->printStats ) displayStats();
-			measure.E = this->updateLinearTransforms();
+			float e = this->updateLinearTransforms();
 			if ( this->printLinear ) this->displayLinearTransforms();
 			this->transformPoints();
-			cout << "E = " << measure.E;
-			checkNaN( measure.E );
-			if ( !this->computeLandmarkDistances( measure ) ) cout << endl;
-			this->measures.push_back( measure );
+			this->computeLandmarkDistances( e );
 
 		}
 
@@ -91,7 +79,6 @@ void ImageGroup::run() {
 			cout << endl << "Level " << level + 1 << "/" << this->deformableLevels << endl;
 			this->setupDeformableTransforms( level );
 			this->transformPoints();
-			Measure measure;
 			int numberOfGrids = 1;
 			float alpha = this->deformableAlpha;
 			cout << "alpha = " << alpha << endl;
@@ -105,10 +92,8 @@ void ImageGroup::run() {
 
 				if ( !( iteration % this->statIntervalUpdate ) ) this->updateStats();
 				if ( this->printStats ) this->displayStats();
-				measure.E = this->updateDeformableTransforms( alpha );
-				cout << "E = " << measure.E;
-				checkNaN( measure.E );
-				if ( measure.E < 0 ) {
+				float e = this->updateDeformableTransforms( alpha );
+				if ( e < 0 ) {
 
 					if ( numberOfDiffeomorphicIterations == 0 ) {
 
@@ -130,8 +115,7 @@ void ImageGroup::run() {
 
 				numberOfDiffeomorphicIterations++;
 				this->transformPoints();
-				if ( !this->computeLandmarkDistances( measure ) ) cout << endl;
-				this->measures.push_back( measure );
+				this->computeLandmarkDistances( e );
 
 			}
 
@@ -1147,9 +1131,20 @@ void ImageGroup::addLandmarks( const char *path, bool asConstraints ) {
 
 }
 
-bool ImageGroup::computeLandmarkDistances( Measure &measure ) {
+void ImageGroup::computeLandmarkDistances( float e ) {
 
-	if ( !this->landmarks.size() ) return false;
+	Measure measure( e );
+	cout << "E = " << e;
+	if ( isnan( e ) ) {
+		cout << endl << "Error : NaN" << endl;
+		exit( 1 );
+	}
+
+	if ( !this->landmarks.size() ) {
+		cout << endl;
+		this->measures.push_back( measure );
+		return;
+	}
 	std::vector< float > distances;
 
 	for ( auto const &[name, currentLandmarks] : this->landmarks) {
@@ -1188,7 +1183,7 @@ bool ImageGroup::computeLandmarkDistances( Measure &measure ) {
 	measure.landmarkAv = mean;
 	measure.landmarkMax = *max;
 	measure.landmarkSTD = stdev;
-	return true;
+	this->measures.push_back( measure );
 
 }
 

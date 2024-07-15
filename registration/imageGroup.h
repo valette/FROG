@@ -86,8 +86,8 @@ protected:
 	public:
 
 		float E, landmarkAv, landmarkMax, landmarkSTD;
-		Measure() : landmarkAv( 0 ), landmarkMax( 0 ), landmarkSTD( 0 ),
-			E ( 0 ) {};
+		Measure( float e ) : landmarkAv( 0 ), landmarkMax( 0 ), landmarkSTD( 0 ),
+			E ( e ) {};
 
 	};
 
@@ -133,7 +133,7 @@ protected:
 
 	// reference landmarks
 	std::map < std::string, Landmarks > landmarks;
-	bool computeLandmarkDistances( Measure &measure );
+	void computeLandmarkDistances( float e );
 	bool saveTransformedLandmarks();
 	void saveLandmarkDistances();
 
