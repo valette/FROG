@@ -20,7 +20,6 @@ class Point {
 
 public:
 
-	float original_xyz[ 3 ]; // original coordinates from pair file
 	float other[ 3 ]; // scale, laplacian sign, detector response
 
 	float xyz[3]; // current coordinates

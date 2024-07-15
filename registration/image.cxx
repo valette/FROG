@@ -14,9 +14,7 @@ void Image::transformPoints( bool apply ) {
 
 void Image::addPoints( vtkBoundingBox &box ) {
 
-	for ( const auto &point : this->points ) {
-		double p[ 3 ] = { point.xyz[ 0 ], point.xyz[ 1 ], point.xyz[ 2 ] };
-		box.AddPoint( p );
-	}
+	for ( const auto &point : this->points )
+		box.AddPoint( point.xyz[ 0 ], point.xyz[ 1 ], point.xyz[ 2 ] );
 
 }

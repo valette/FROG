@@ -1118,7 +1118,6 @@ void ImageGroup::addLandmarks( const char *path, bool asConstraints ) {
 
 			}
 
-			for ( int k = 0; k < 3; k++ ) pt.original_xyz[ k ] = pt.xyz[ k ];
 			points.push_back( pt );
 			this->landmarks[ name ].push_back( landmark );
 			constraints[ name ].push_back( landmark );
@@ -1287,8 +1286,7 @@ void ImageGroup::readPairs( char *inputFile ) {
 		for ( int j = 0; j < nPoints; j++) {
 
 			Point *pt = & image->points[ j ];
-			unused = fread( pt->original_xyz, sizeof( float ), 3, file );
-			for ( int k = 0; k < 3; k++ ) pt->xyz[ k ] = pt->original_xyz[ k ];
+			unused = fread( pt->xyz, sizeof( float ), 3, file );
 			unused = fread( pt->other, sizeof( float ), 3, file );
 
 		}
