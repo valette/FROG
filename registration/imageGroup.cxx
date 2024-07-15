@@ -1168,13 +1168,12 @@ void ImageGroup::computeLandmarkDistances( float e ) {
 
 	}
 
-	double sum = std::accumulate( distances.begin(), distances.end(), 0.0 );
+	double sum = std::reduce( distances.begin(), distances.end(), 0.0 );
 	double mean = sum / distances.size();
+	auto max = std::max_element( distances.begin(), distances.end());
 
 	double sq_sum = std::inner_product( distances.begin(), distances.end(),
 		distances.begin(), 0.0 );
-
-	auto max = std::max_element( distances.begin(), distances.end());
 
 	double stdev = sqrt( sq_sum / distances.size() - mean * mean);
 	cout << ", " << distances.size() << " landmarks:max=" << *max
