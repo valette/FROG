@@ -14,8 +14,10 @@ parser = argparse.ArgumentParser( description = 'Register a volume against an al
 parser.add_argument( '-a', dest = 'all', help = 'register all', action="store_true" )
 parser.add_argument( '-d', dest = 'inputDir', help = 'input registered group directory', required = True )
 parser.add_argument( '-dl', dest = 'nDeformableLevels', help = 'number of deformable levels for registration', type = int )
+parser.add_argument( '-l', dest = 'landmarks', help = 'path to landmarks file' )
 parser.add_argument( '-li', dest = 'nLinearIterations', help = 'number of linear iterations for registration', type = int )
 parser.add_argument( '-i', dest = 'inputVolume', help = 'input volume', required = True )
+parser.add_argument( '-k', dest = 'keepVolumeOrientation', help = 'do not convert volume orientation to RAS', action = "store_true" )
 parser.add_argument( '-p', dest = 'numberOfPoints', type = int, help = 'number of keypoints to extract with SURF3D', default = 20000 )
 parser.add_argument( '-n', dest = 'numberOfReferences', type = int, help = 'number of reference volumes to register against' )
 parser.add_argument( '-s', dest = 'spacing', type = float, help = 'spacing for SURF3D', default = 0.75 )
@@ -94,7 +96,8 @@ print( str( len( points ) ) + " references" )
 inputPoints = "";
 
 if not args.inputVolume.endswith( '.csv.gz' ) :
-	inputVolume = flipAndSaveToRAS( args.inputVolume )
+	if args.keepVolumeOrientation : inputVolume = args.inputVolume
+	else : inputVolume = flipAndSaveToRAS( args.inputVolume )
 	surfBin = join( frogPath, "surf3d" )
 	surfArgs = [ surfBin, inputVolume, "-s", str( args.spacing ), "-t", str( args.threshold ), "-n", str( args.numberOfPoints )]
 	if args.cmin != None : surfArgs.extend( [ "-cmin", str( args.cmin ) ] )
@@ -121,6 +124,7 @@ execute( matchCmd )
 #### register
 frogBin = join( frogPath, "frog" )
 frogArgs = [ frogBin, "pairs.bin", "-j -fd", args.inputDir + "/transforms" ]
+if args.landmarks : frogArgs.extend( [ "-l", args.landmarks ] )
 if args.nDeformableLevels : frogArgs.extend( [ "-dl", str( args.nDeformableLevels ) ] )
 if args.nLinearIterations : frogArgs.extend( [ "-li", str( args.nLinearIterations ) ] )
 if not args.all : frogArgs.extend( [ "-fi", str( len( points ) ) ] )
