@@ -22,7 +22,7 @@ const label = new qx.ui.basic.Label( "" );
 viewer.add( label, { right : 10, bottom : 10 } );
 
 const surf = new desk.Action( "SURF3D");
-surf.setParameters( { writeJSON : 1, writeCSVGZ : 0, writeCSV : 0, writeBIN : 0, outputFileName : "points"}, true );
+surf.setParameters( { type : 3, writeJSON : 1, writeCSVGZ : 0, writeCSV : 0, writeBIN : 0, outputFileName : "points"}, true );
 surf.setParameters( { spacing : params.spacing, numberOfPoints : params.numberOfPoints } );
 surf.getForm( "inputVolume").addListener( "changeValue", updateVolume );
 surf.addListener( "actionUpdated", updatePoints );
