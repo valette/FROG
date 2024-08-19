@@ -83,12 +83,14 @@ def flipAndSaveToRAS( filename ):
                 
         ##Check the new orientation
         NewOrientation = nib.aff2axcodes(flippedImage.affine)
-        
+        img_data = flippedImage.get_fdata()
+        img_conv = nib.Nifti1Image(img_data.astype(flippedImage.header.get_data_dtype()), flippedImage.affine, flippedImage.header)
+
         #Set Qcode to 1 that the Qform matrix can be used into the further processing
-        flippedImage.header['qform_code'] = 1
+        img_conv.header['qform_code'] = 1
         
         #Save the flipped image
-        nib.save(flippedImage, RASFile )
+        nib.save(img_conv, RASFile )
 
         print("The new orientation is now : ", NewOrientation)
         return RASFile
