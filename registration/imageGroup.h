@@ -46,6 +46,7 @@ public:
 	bool writeSingleFileTransforms; // outputs a single big JSON file for each transform
 
 	std::string transformSubdirectory;
+	std::string errorMapsSubdirectory;
 	void addLandmarks( const char *path, bool asConstraints = false );
 
 	ImageGroup() {
@@ -77,6 +78,7 @@ public:
 			writePairs = false;
 			writeSingleFileTransforms = false;
 			transformSubdirectory = std::string( "transforms" );
+			errorMapsSubdirectory = std::string( "errorMaps" );
 		};
 
 protected:
@@ -118,6 +120,7 @@ protected:
 	void countInliers(); // displays number of inliers/outliers
 
 	double updateDeformableTransforms( const float alpha ); // returns error value or -1 if diffeomorphism is not guaranteed
+	void saveErrorMaps();
 	double updateLinearTransforms();
 
 	void displayStats();

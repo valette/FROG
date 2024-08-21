@@ -20,6 +20,7 @@
 #include <vtkLandmarkTransform.h>
 #include <vtkMath.h>
 #include <vtkMatrixToLinearTransform.h>
+#include <vtkNIFTIImageWriter.h>
 #include <vtkPointData.h>
 #include <vtkPoints.h>
 
@@ -137,6 +138,7 @@ void ImageGroup::run() {
 		}
 
 		cout << endl << "Total number of grids : " << totalNumberOfGrids << endl;
+		this->saveErrorMaps();
 	}
 
 	this->displayStats();
@@ -466,6 +468,101 @@ double ImageGroup::updateDeformableTransforms( const float alpha ) {
 	}
 
 	return sqrt( sDistances / sWeights );
+
+}
+
+
+void ImageGroup::saveErrorMaps() {
+
+	const float constraintWeight = this->images.size() * this->landmarksConstraintsWeight;
+	std::filesystem::create_directory( this->errorMapsSubdirectory.c_str() );
+
+	#pragma omp parallel for
+	for ( int image1 = this->numberOfFixedImages; image1 < this->images.size(); image1++ ) {
+
+		Image &image = this->images[ image1 ];
+		float *gradient = ( float* ) image.gradient->GetScalarPointer();
+		const auto dims = image.gradient->GetDimensions();
+		const auto increments = image.gradient->GetIncrements();
+		const auto spacing = image.gradient->GetSpacing();
+		const auto origin = image.gradient->GetOrigin();
+		image.gradient->GetPointData()->GetScalars()->Fill( 0 );
+		Stats *statsA = &image.stats;
+
+		for ( auto const &point : image.points ) {
+
+			const float *pos = point.xyz;
+			const float *pA = point.xyz2;
+			float sWeight = 0;
+			float sDisp[ 3 ] = { 0, 0, 0 };
+			// compute point displacement
+
+			for ( auto const &link : point.links ) {
+
+				Image *image2 = &this->images[ link.image ];
+				Point *pointB = &image2->points[ link.point ];
+				float *pB = pointB->xyz2;
+				float dist2 = vtkMath::Distance2BetweenPoints( pA, pB );
+				float dist = sqrt( dist2 );
+				float probA = statsA->getInlierProbability( dist );
+				float probB = image2->stats.getInlierProbability( dist );
+				float weight = std::min( probA, probB );
+				float weight2 = weight * weight;
+				if ( weight < this->inlierThreshold ) continue;
+
+				for ( int k = 0; k < 3; k++ )
+					sDisp[ k ] += weight2 * ( pB[ k ] - pA[ k ] );
+
+				sWeight += weight2;
+
+			}
+
+			for ( auto const &link : point.hardLinks ) {
+
+				Image *image2 = &this->images[ link.image ];
+				Point *pointB = &image2->points[ link.point ];
+				float *pB = pointB->xyz2;
+				float dist2 = vtkMath::Distance2BetweenPoints( pA, pB );
+				float weight2 = constraintWeight * constraintWeight;
+
+				for ( int k = 0; k < 3; k++ )
+					sDisp[ k ] += weight2 * ( pB[ k ] - pA[ k ] );
+
+				sWeight += weight2;
+
+			}
+
+			if ( sWeight == 0 ) continue;
+			// add point displacement to mean image
+			int id = 0;
+
+			for ( int k = 0; k < 3; k++ ) {
+
+				float coord = ( pos[ k ] - origin[ k ] ) / spacing[ k ];
+				id += floor( coord ) * increments[ k ];
+
+			}
+
+			gradient[ id  + 3 ] += sWeight;
+			for ( int k = 0; k < 3; k++ ) gradient[ id  + k ] += sDisp[ k ];
+
+		}
+
+		const int nValues = dims[ 0 ] * dims[ 1 ] * dims[ 2 ];
+		for ( int i = 0; i < nValues; i++ ) {
+			const int id = 4 * i;
+			if ( gradient[ id + 3 ] > 0 )
+				for ( int k = 0; k < 3; k++ ) gradient[ id + k ] /= gradient[ id + 3 ];
+		}
+
+		std::ostringstream file;
+		file << this->errorMapsSubdirectory << "/" << image1 << ".nii.gz";
+		vtkNew< vtkNIFTIImageWriter > writer;
+		writer->SetInputData( image.gradient );
+		writer->SetFileName( file.str().c_str() );
+		writer->Write();
+
+	}
 
 }
 
