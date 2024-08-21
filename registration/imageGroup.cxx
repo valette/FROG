@@ -260,21 +260,20 @@ double ImageGroup::updateDeformableTransforms( const float alpha ) {
 				Image *image2 = &this->images[ link.image ];
 				Point *pointB = &image2->points[ link.point ];
 				float *pB = pointB->xyz2;
-				float dist = sqrt( vtkMath::Distance2BetweenPoints( pA, pB ) );
+				float dist2 = vtkMath::Distance2BetweenPoints( pA, pB );
+				float dist = sqrt( dist2 );
 				float probA = statsA->getInlierProbability( dist );
 				float probB = image2->stats.getInlierProbability( dist );
 				float weight = std::min( probA, probB );
-
-				sDistances += weight *weight * dist * dist;
-				sWeights += weight * weight;
-
+				float weight2 = weight * weight;
 				if ( weight < this->inlierThreshold ) continue;
-				weight *= weight;
+				sWeights += weight2;
+				sDistances += weight2 * dist2;
 
 				for ( int k = 0; k < 3; k++ )
-					sDisp[ k ] += weight * ( pB[ k ] - pA[ k ] );
+					sDisp[ k ] += weight2 * ( pB[ k ] - pA[ k ] );
 
-				sWeight += weight;
+				sWeight += weight2;
 
 			}
 
@@ -283,16 +282,15 @@ double ImageGroup::updateDeformableTransforms( const float alpha ) {
 				Image *image2 = &this->images[ link.image ];
 				Point *pointB = &image2->points[ link.point ];
 				float *pB = pointB->xyz2;
-				float dist = sqrt( vtkMath::Distance2BetweenPoints( pA, pB ) );
-				float weight = constraintWeight;
-				sDistances += weight *weight * dist * dist;
-				sWeights += weight * weight;
-				weight *= weight;
+				float dist2 = vtkMath::Distance2BetweenPoints( pA, pB );
+				float weight2 = constraintWeight * constraintWeight;
+				sDistances += weight2 * dist2;
+				sWeights += weight2;
 
 				for ( int k = 0; k < 3; k++ )
-					sDisp[ k ] += weight * ( pB[ k ] - pA[ k ] );
+					sDisp[ k ] += weight2 * ( pB[ k ] - pA[ k ] );
 
-				sWeight += weight;
+				sWeight += weight2;
 
 			}
 
