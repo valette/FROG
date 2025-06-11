@@ -2,6 +2,21 @@ import os.path
 import vtk
 import json
 
+def readNIFTI( file ):
+	reader = vtk.vtkNIFTIImageReader()
+	reader.SetFileName( file )
+	reader.Update()
+	image = reader.GetOutput()
+	origin = [ 0, 0, 0 ]
+	qForm = reader.GetQFormMatrix()
+	if not qForm : qForm = vtkMatrix4x4()
+
+	for i in range( 3 ) :
+		origin[ i ] = qForm.GetElement( i, 3 )
+
+	image.SetOrigin( origin )
+	return image
+
 def readTransform( file ):
 
 	transforms = vtk.vtkGeneralTransform()
@@ -38,19 +53,9 @@ def readTransform( file ):
 				if "file" in transform :
 
 					niiFile = transform[ "file" ]
-					reader = vtk.vtkNIFTIImageReader()
 					transDir = os.path.dirname( file )
-					reader.SetFileName( os.path.join( transDir, niiFile ) )
-					reader.Update()
-					coefficients.ShallowCopy( reader.GetOutput() )
-					origin = [ 0, 0, 0 ]
-					qForm = reader.GetQFormMatrix()
-					if not qForm : qForm = vtkMatrix4x4()
-
-					for i in range( 3 ) :
-						origin[ i ] = qForm.GetElement( i, 3 )
-
-					coefficients.SetOrigin( origin )
+					image = readNIFTI( os.path.join( transDir, niiFile ) )
+					coefficients.ShallowCopy( image )
 
 				else :
 

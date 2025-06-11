@@ -220,11 +220,12 @@
 			"executable" : "bin/match"
 
 		},
-		"MeshTransform" : {
-
+		"meshTransform" : {
+			"alias" : "MeshTransform",
 			"parameters" : [
 				{
-					"name" : "source",
+					"name" : "inputMesh",
+					"alias" : "source",
 					"type" : "file",
 					"required" : true
 				},
