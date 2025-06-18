@@ -11,10 +11,93 @@
 #include <vtkMatrixToLinearTransform.h>
 #include <vtkNIFTIImageReader.h>
 #include <vtkNIFTIImageWriter.h>
-
+#include <vtkPolyDataReader.h>
+#include <vtkSmartPointer.h>
+#include <vtkPLYReader.h>
+#include <vtkOBJReader.h>
+#include <vtkSTLReader.h>
+#include <vtkPolyData.h>
+#include <vtkPLYWriter.h>
+#include <vtkSTLWriter.h>
+#include <vtkOBJWriter.h>
+#include <vtkPolyDataWriter.h>
+#include <vtkXMLPolyDataWriter.h>
 #include "../vtkOpenSURF3D/picojson.h"
 
 using namespace picojson;
+
+vtkSmartPointer<vtkPolyData> ReadPolyData(const std::string& fileName) {
+    vtkSmartPointer<vtkPolyData> polyData;
+    std::string extension = fileName.substr(fileName.find_last_of(".") + 1);
+
+    if (extension == "ply") {
+        vtkSmartPointer<vtkPLYReader> reader = vtkSmartPointer<vtkPLYReader>::New();
+        reader->SetFileName(fileName.c_str());
+        reader->Update();
+        polyData = reader->GetOutput();
+    } else if (extension == "obj") {
+        vtkSmartPointer<vtkOBJReader> reader = vtkSmartPointer<vtkOBJReader>::New();
+        reader->SetFileName(fileName.c_str());
+        reader->Update();
+        polyData = reader->GetOutput();
+    } else if (extension == "vtk") {
+        vtkSmartPointer<vtkPolyDataReader> reader = vtkSmartPointer<vtkPolyDataReader>::New();
+        reader->SetFileName(fileName.c_str());
+        reader->Update();
+        polyData = reader->GetOutput();
+    } else if (extension == "stl") {
+        vtkSmartPointer<vtkSTLReader> reader = vtkSmartPointer<vtkSTLReader>::New();
+        reader->SetFileName(fileName.c_str());
+        reader->Update();
+        polyData = reader->GetOutput();
+    } else {
+        std::cerr << "Unsupported file format: " << extension << std::endl;
+        return nullptr;
+    }
+
+    if (polyData->GetNumberOfPoints() == 0 || polyData->GetNumberOfCells() == 0) {
+        std::cerr << "Failed to read polydata from file: " << fileName << std::endl;
+        return nullptr;
+    }
+
+    return polyData;
+}
+
+bool WritePolyData( vtkSmartPointer<vtkPolyData> polyData, const std::string& fileName) {
+    std::string extension = fileName.substr(fileName.find_last_of(".") + 1);
+
+    if (extension == "ply") {
+        vtkSmartPointer<vtkPLYWriter> writer = vtkSmartPointer<vtkPLYWriter>::New();
+        writer->SetFileName(fileName.c_str());
+        writer->SetInputData(polyData);
+        writer->Write();
+    } else if (extension == "stl") {
+        vtkSmartPointer<vtkSTLWriter> writer = vtkSmartPointer<vtkSTLWriter>::New();
+        writer->SetFileName(fileName.c_str());
+        writer->SetInputData(polyData);
+        writer->Write();
+    } else if (extension == "obj") {
+        vtkSmartPointer<vtkOBJWriter> writer = vtkSmartPointer<vtkOBJWriter>::New();
+        writer->SetFileName(fileName.c_str());
+        writer->SetInputData(polyData);
+        writer->Write();
+    } else if (extension == "vtk") {
+        vtkSmartPointer<vtkPolyDataWriter> writer = vtkSmartPointer<vtkPolyDataWriter>::New();
+        writer->SetFileName(fileName.c_str());
+        writer->SetInputData(polyData);
+        writer->Write();
+    } else if (extension == "vtp") {
+        vtkSmartPointer<vtkXMLPolyDataWriter> writer = vtkSmartPointer<vtkXMLPolyDataWriter>::New();
+        writer->SetFileName(fileName.c_str());
+        writer->SetInputData(polyData);
+        writer->Write();
+    } else {
+        std::cerr << "Unsupported file format: " << extension << std::endl;
+        return false;
+    }
+
+    return true;
+}
 
 void writeTFM( vtkGeneralTransform *generalTransform, const char *fileName ) {
 
@@ -257,7 +340,7 @@ vtkGeneralTransform *readTFM ( const char *fileName ) {
 		for ( int i = 0; i < nb ; i++ ) {
 
 			file >> p[ 0 ] >> p[ 1 ] >> p[ 2 ];
-			file.ignore ( std::numeric_limits<std::streamsize>::max(), '\n' );	
+			file.ignore ( std::numeric_limits<std::streamsize>::max(), '\n' );
 			p += 3;
 
 		}
@@ -272,7 +355,7 @@ vtkGeneralTransform *readTFM ( const char *fileName ) {
 			std::cerr << "Error while loading Transform" << std::endl;
 			exit( 1 );
 
-		} 
+		}
 
 	}
 
@@ -390,7 +473,7 @@ vtkGeneralTransform *readJSONfromString ( const char *str, const char *file ) {
 	std::string err;
 	picojson::parse( v, str, str + strlen( str ) );
 	if ( !err.empty() ) std::cerr << err << std::endl;
-	object trans = v.get<object>();	
+	object trans = v.get<object>();
 
 	if ( !( trans[ "transforms" ].is<picojson::null>() ) ) return readFrogJSON( trans, file );
 

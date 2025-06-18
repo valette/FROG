@@ -25,7 +25,7 @@ int main( int argc, char *argv[] ) {
 		exit( 1 );
 	}
 
-	char *outputFile = 0;
+	const char *outputFile = "output.obj" ;
 
 	vtkGeneralTransform *transform = vtkGeneralTransform::New();
 	transform->Identity();
@@ -59,19 +59,9 @@ int main( int argc, char *argv[] ) {
 
 	vtkTransformPolyDataFilter *polyDataTransform = vtkTransformPolyDataFilter::New();
 	polyDataTransform->SetTransform( transform );
-	vtkOBJReader *reader = vtkOBJReader::New();
-//	vtkPLYReader *reader = vtkPLYReader::New();
-	reader->SetFileName( argv[ 1 ] );
-	reader->Update();
-	
-	polyDataTransform->SetInputData( reader->GetOutput() );
+	polyDataTransform->SetInputData( ReadPolyData( argv[ 1 ] ) );
 	polyDataTransform->Update();
-	vtkOBJWriter *writer = vtkOBJWriter::New();
-	writer->SetInputData( polyDataTransform->GetOutput() );
-	writer->SetFileName( "output.obj" );
-	writer->Write();
-
-	// reslice
+	WritePolyData( polyDataTransform->GetOutput(), outputFile );
 	timer->StopTimer();
 	std::cout << "Transform computed in " << timer->GetElapsedTime() << "s" << std::endl;
 
