@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.30)
 project(FROG)
 
 SET (LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin CACHE PATH "Single output directory for building all libraries.")
@@ -12,8 +12,8 @@ IF (USE_UINT_FOR_POINT_IDS)
 ENDIF (USE_UINT_FOR_POINT_IDS)
 
 find_package(OpenCV REQUIRED)
-find_package(VTK REQUIRED NO_MODULE)
-include(${VTK_USE_FILE})
+find_package(VTK REQUIRED COMPONENTS CommonSystem FiltersGeneral FiltersHybrid ImagingColor IOGeometry IOExport IOPLY )
+include_directories(${VTK_INCLUDE_DIRS})
 
 ADD_SUBDIRECTORY(match)
 ADD_SUBDIRECTORY(registration)
