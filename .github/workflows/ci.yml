@@ -35,7 +35,7 @@ jobs:
     - name: Install opencv and boost
       run: |
         apt-get update
-        apt-get -y install libopencv-dev libboost-dev libboost-filesystem-dev
+        apt-get -y install libopencv-dev libboost-dev libboost-filesystem-dev libboost-iostreams-dev
 
     - name: Setup Directories
       working-directory: ${{github.workspace}}

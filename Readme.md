@@ -1,4 +1,4 @@
-<!---[![Build Status](https://travis-ci.org/valette/FROG.png)](https://travis-ci.org/valette/FROG) -->
+[![CI](https://github.com/valette/FROG/actions/workflows/ci.yml/badge.svg)](https://github.com/valette/FROG/actions/workflows/ci.yml)
 
 FROG : Fast Registration Of image Groups
 ========================================
