@@ -32,10 +32,10 @@ jobs:
         lfs: 'false'
         submodules: 'recursive'
 
-    - name: Install opencv
+    - name: Install opencv and boost
       run: |
         apt-get update
-        apt-get -y install libopencv-dev
+        apt-get -y install libopencv-dev libboost-dev
 
     - name: Setup Directories
       working-directory: ${{github.workspace}}

@@ -1,4 +1,6 @@
-FROG : Fast Registration Of image Groups 
+<!---[![Build Status](https://travis-ci.org/valette/FROG.png)](https://travis-ci.org/valette/FROG) -->
+
+FROG : Fast Registration Of image Groups
 ========================================
 <p align="center">
   <img src="https://www.creatis.insa-lyon.fr/~valette/public/project/frog/featured_huf3b80675463e3a95253905cb1f0a6681_392849_cae6eb67255cf523f959b4cd1212c3d8.webp">
@@ -89,7 +91,7 @@ Finally, groupwise registration can occur, with the frog program:
 
 	bin/frog pairs.bin [options]
 
-Options : 
+Options :
 
 	 * -da <value>  : set alpha for deformable registration. Default : 0.02
 	 * -dlinear 0/1 : display linear parameters during registration. default : 0
