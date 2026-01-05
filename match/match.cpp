@@ -3,7 +3,7 @@
 #include <vector>
 #include <tuple>
 #include <fstream>
-#include <iostream> 
+#include <iostream>
 #include <cmath>
 #include <omp.h>
 #include <assert.h>
@@ -23,6 +23,9 @@
 
 #include "../tools/pointIdType.h"
 #include "../tools/transformIO.h"
+
+using std::cout;
+using std::endl;
 
 namespace fs = boost::filesystem;
 using namespace std;
@@ -270,7 +273,7 @@ MatchVect* ComputeMatches(Points &points2, Points &points1, float threshold, flo
 			if (points1[i].laplacianSign != points2[j].laplacianSign) continue;
 
 			//Scale
-			if ((points1[i].scale/points2[j].scale > 1.3) || 
+			if ((points1[i].scale/points2[j].scale > 1.3) ||
 					(points2[j].scale/points1[i].scale > 1.3) )
 				continue;
 
@@ -282,7 +285,7 @@ MatchVect* ComputeMatches(Points &points2, Points &points1, float threshold, flo
 				float x2 = points2[j].transformedCoordinates[0];
 				float y2 = points2[j].transformedCoordinates[1];
 				float z2 = points2[j].transformedCoordinates[2];
-				
+
 				float euclNorm = sqrt((x1-x2)*(x1-x2) + (y1-y2)*(y1-y2) + (z1-z2)*(z1-z2));
 
 				if (euclNorm > anatVal){
@@ -410,7 +413,7 @@ int main( int argc, char *argv[] ) {
 		if (strcmp(key, "-p") == 0) {
 			writePoints = true;
 		}
-		
+
 		if (strcmp(key, "-anat") == 0){
 			anatVal = atof(value);
 		}
@@ -507,7 +510,7 @@ int main( int argc, char *argv[] ) {
 
 	#pragma omp parallel shared(filenames, allPoints, cout)
 	{
-		//Full list	
+		//Full list
 		#pragma omp for schedule(dynamic)
 		for (auto it = 0 ; it < nb ; ++it) {
 
@@ -587,7 +590,7 @@ int main( int argc, char *argv[] ) {
 			});
 
 			allPoints[it]->erase(rit, allPoints[it]->end());
-	
+
 
 			if ( allPoints[it]->size() > np) {
 				partial_sort(allPoints[it]->begin(), allPoints[it]->begin()+np, allPoints[it]->end(), compareCSVrow);
@@ -624,7 +627,7 @@ int main( int argc, char *argv[] ) {
 			for (int j = i+1 ; j < allPoints.size() ; j++) {
 				indices.push_back( make_pair(i, j) );
 			}
-		}	
+		}
 	}
 
 	vector < vector< MatchVect* > > pairs;
@@ -704,7 +707,7 @@ int main( int argc, char *argv[] ) {
 			tmp[0] = 0.0;	tmp[1] = 0.0;	tmp[2] = 0.0;
 
 		}
-		
+
 		fwrite(tmp.data(), sizeof(double), 3, file);
 
 		// Write Points

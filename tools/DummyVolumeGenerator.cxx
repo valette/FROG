@@ -1,3 +1,4 @@
+#include <iostream>
 #include <vtkImageData.h>
 #include <vtkMetaImageWriter.h>
 #include <vtkImageWriter.h>
@@ -5,6 +6,8 @@
 #include "../vtkOpenSURF3D/picojson.h"
 
 using namespace picojson;
+using std::cout;
+using std::endl;
 
 int main( int argc, char *argv[] ) {
 
@@ -39,7 +42,7 @@ int main( int argc, char *argv[] ) {
 
 	}
 
-	object trans = v.get<object>();	
+	object trans = v.get<object>();
 	array bbox = trans[ "bbox" ].get<array>();
 	array aMin = bbox[ 0 ].get<array>();
 	array aMax = bbox[ 1 ].get<array>();

@@ -5,6 +5,7 @@
 #include <limits>
 #include <filesystem>
 
+#include <iostream>
 #include <vtkGeneralTransform.h>
 #include <vtkImageData.h>
 #include <vtkBSplineTransform.h>
@@ -25,6 +26,8 @@
 #include "../vtkOpenSURF3D/picojson.h"
 
 using namespace picojson;
+using std::cout;
+using std::endl;
 
 vtkSmartPointer<vtkPolyData> ReadPolyData(const std::string& fileName) {
     vtkSmartPointer<vtkPolyData> polyData;

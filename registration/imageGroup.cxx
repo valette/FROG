@@ -1,5 +1,5 @@
 #include <algorithm>
-#include <assert.h> 
+#include <assert.h>
 #include <filesystem>
 #include <iostream>
 #include <numeric>
@@ -27,6 +27,9 @@
 #include "../tools/transformIO.h"
 
 #include "imageGroup.h"
+
+using std::cout;
+using std::endl;
 
 void ImageGroup::run() {
 
@@ -1190,7 +1193,7 @@ void ImageGroup::addLandmarks( const char *path, bool asConstraints ) {
 
 				int pos = line.find( ',');
 				std::string coord = line.substr( 0, pos );
-				line.erase( 0, pos + 1 );				
+				line.erase( 0, pos + 1 );
 				pt.xyz[ j ] = stof( coord );
 				if ( j < 2 && this->invertLandmarksCoordinates )
 					pt.xyz[ j ] *= -1; // get opposite x and y coordinates!
