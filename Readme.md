@@ -36,7 +36,20 @@ This code is distributed under the CeCILL-B license (BSD-compatible)
 
 Note for FEDORA linux : in case of crashes, please use a self-compiled version of VTK.
 
-### Usage with global script run.sh ###
+### Usage with FROG.py ###
+
+this repository includes a FROG.py script which chains all these steps:
+* Keypoint extraction from input images
+* Keypoint matching
+* groupwise registration of keypoints
+
+launch
+
+	python FROG.py -h
+
+to view all available options
+
+### Usage with (DEPRECATED) global script run.sh ###
 
 Groupwise registration is computed via the run.sh script, in three steps:
 * Keypoint extraction from input images
