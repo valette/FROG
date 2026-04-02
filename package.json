@@ -7,7 +7,7 @@
     "async": "1.5.2",
     "desk-client": "0.10.0",
     "heap": "0.2.7",
-    "lodash": "4.17.21",
+    "lodash": "4.18.1",
     "numeric": "1.2.6",
     "ttest": "4.0.0"
   }
