@@ -832,8 +832,12 @@ void ImageGroup::setupLinearTransforms() {
 			float c = anchorPosition[ j ];
 			float anchor = ( 1 - c ) * box.GetBound( 2 * j ) + c * box.GetBound( 1 + 2 * j );
 			anchors[ i ][ j ] = anchor;
-			if ( i < this->images.size() - this->numberOfFixedImages )
-				averageAnchor[ j ] += anchor / ( float ) ( this->images.size() - this->numberOfFixedImages );
+			if ( this->numberOfFixedImages > 0 ) {
+				if ( i < this->numberOfFixedImages )
+					averageAnchor[ j ] += anchor / ( float ) this->numberOfFixedImages;
+			} else {
+				averageAnchor[ j ] += anchor / ( float ) this->images.size();
+			}
 
 		}
 
