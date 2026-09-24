@@ -1,5 +1,6 @@
 import argparse
 import os
+import sys
 from os import listdir
 from os.path import abspath, dirname, isdir, join, normpath
 import tempfile
@@ -46,27 +47,6 @@ def execute( cmd ):
 	if code : raise( OSError( code ) )
 
 
-def computeAverageImage( images ) :
-	if not args.imageSpacing : return
-	separate()
-	print( "Compute average image" )
-	startTime = time.time()
-	dummyBin = join( frogPath, "DummyVolumeGenerator" )
-	execute( " ".join( [ dummyBin, "bbox.json", str( args.imageSpacing ) ] ) )
-	transformedImages = []
-
-	for i, image in enumerate( images ) :
-		separate()
-		transformBin = join( frogPath, "VolumeTransform" )
-		transformedImage = "transformed" + str( i ) + ".nii.gz"
-		if args.flipToRAS: image = flipAndSaveToRAS( image )
-		execute( " ".join( [ transformBin, image, "dummy.mhd", "-t transforms/" + str( i ) + ".json -o " + transformedImage ] ) )
-		transformedImages.append( transformedImage )
-
-	averageBin = join( frogPath, "AverageVolumes" )
-	execute( " ".join( [ averageBin, " ".join( transformedImages ) ] ) )
-	print( "Average image computed in " + str( round( time.time() - startTime ) ) + "s" )
-
 files = [ abspath( args.source ), abspath( args.target ) ]
 masks = []
 if args.mask1 and args.mask2 :
@@ -81,7 +61,7 @@ volumes = open( volumesList, "w" )
 volumes.write( "\n".join( files ) )
 volumes.close()
 
-frogArgs = [ "python", frogBin, volumesList, "-s", str( args.spacing ), "-t", str( args.threshold ), "-p", str( args.numberOfPoints ) ]
+frogArgs = [ sys.executable, frogBin, volumesList, "-s", str( args.spacing ), "-t", str( args.threshold ), "-p", str( args.numberOfPoints ) ]
 
 if len( masks ) :
 	print( "Using masks : " )
@@ -97,8 +77,6 @@ if args.deformableIterations : frogArgs.extend( [ "-di", str( args.deformableIte
 if args.writePairs : frogArgs.append( "-wp" )
 if args.landmarks : frogArgs.extend( [ "-l", args.landmarks ] )
 if args.gridSpacing : frogArgs.extend( [ "-g", str( args.gridSpacing ) ] )
-if args.spacing : frogArgs.extend( [ "-s", str( args.spacing ) ] )
-if args.numberOfPoints : frogArgs.extend( [ "-p", str( args.numberOfPoints ) ] )
 execute( " ".join( frogArgs ) )
 
 
