@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <cmath>
 #include <vtkImageCast.h>
 #include <vtkImageData.h>
@@ -33,7 +34,7 @@ int main( int argc, char *argv[] ) {
 			average->AllocateScalars(VTK_FLOAT, 1);
 			stdev->AllocateScalars(VTK_FLOAT, 1);
 			float *ptrOut = ( float * ) average->GetScalarPointer();
-			float *ptrOut2 = ( float * ) average->GetScalarPointer();
+			float *ptrOut2 = ( float * ) stdev->GetScalarPointer();
 
 			for ( int j = 0; j < nbVoxels; j++ ) {
 
@@ -72,7 +73,8 @@ int main( int argc, char *argv[] ) {
 
 	for ( int j = 0; j < nbVoxels; j++ ) {
 
-		ptrOut2[ j ] = sqrt( ptrOut2[ j ] - ptrOut[ j ] * ptrOut[ j ] );
+		float diff = ptrOut2[ j ] - ptrOut[ j ] * ptrOut[ j ];
+		ptrOut2[ j ] = sqrt( std::max( 0.0f, diff ) );
 
 	}
 
