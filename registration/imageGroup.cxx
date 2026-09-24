@@ -748,6 +748,19 @@ ImageGroup::RANSACResult ImageGroup::RANSACBatch( int imageId, int nIterations, 
 	int nPoints = pts.size();
 	std::mt19937 rng( batch * 1000 );
 
+	std::vector<int> validPointIndices;
+	for ( int pIdx = 0; pIdx < nPoints; pIdx++ ) {
+		if ( !pts[ pIdx ].links.empty() )
+			validPointIndices.push_back( pIdx );
+	}
+
+	if ( validPointIndices.size() < (size_t) numberOfRansacPoints ) {
+		source->Delete();
+		target->Delete();
+		trans->Delete();
+		return std::make_pair( 0, matrix );
+	}
+
 	for ( int i = 0; i < nIterations; i++ ) {
 
 		source->Reset();
@@ -755,21 +768,13 @@ ImageGroup::RANSACResult ImageGroup::RANSACBatch( int imageId, int nIterations, 
 
 		for ( int j = 0; j < numberOfRansacPoints; j++ ) {
 
-			while ( true ) {
-
-				int pt = rng() % nPoints;
-				Point &point = pts[ pt ];
-				auto &links = point.links;
-				auto size = links.size();
-				if ( size == 0 ) continue;
-				source->InsertNextPoint( point.xyz );
-				int linkId = rng() % size;
-				auto &link = links[ linkId ];
-				target->InsertNextPoint(
-					this->images[ link.image ].points[ link.point ].xyz );
-				break;
-
-			}
+			int pt = validPointIndices[ rng() % validPointIndices.size() ];
+			Point &point = pts[ pt ];
+			source->InsertNextPoint( point.xyz );
+			int linkId = rng() % point.links.size();
+			auto &link = point.links[ linkId ];
+			target->InsertNextPoint(
+				this->images[ link.image ].points[ link.point ].xyz2 );
 
 		}
 
