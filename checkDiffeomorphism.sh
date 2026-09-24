@@ -55,6 +55,13 @@ echo "******************************************************"
 ROOT_DIR=$(cd `dirname $0` && pwd)
 CHECKDIFFEOMORPHISM=$ROOT_DIR/bin/CheckDiffeomorphism
 
+# Convert input images to absolute paths
+for (( CUR_IT=0; CUR_IT<${IMG_NUMBER}; CUR_IT++ ))
+do
+	IMG_INPUT[CUR_IT]=$(realpath "${IMG_INPUT[CUR_IT]}")
+done
+RES_FOLDER=$(realpath -m "$RES_FOLDER")
+
 cd $RES_FOLDER
 N=0;
 SPACING=${2:--1}
@@ -63,7 +70,11 @@ for (( CUR_IT=0; CUR_IT<${IMG_NUMBER}; CUR_IT++ ))
 do
 	IMG=${IMG_INPUT[CUR_IT]};
 	TRANS=transformed$CUR_IT.nii.gz
-	launch "$CHECKDIFFEOMORPHISM $IMG tfm/$CUR_IT.tfm $SPACING"
+	TRANSFORM="transforms/$CUR_IT.json"
+	if [ ! -f "$TRANSFORM" ] && [ -f "tfm/$CUR_IT.tfm" ]; then
+		TRANSFORM="tfm/$CUR_IT.tfm"
+	fi
+	launch "$CHECKDIFFEOMORPHISM $IMG $TRANSFORM $SPACING"
 	if [ $? -ne 0 ]
 	then
 		N=1
