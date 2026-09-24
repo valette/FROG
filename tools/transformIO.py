@@ -9,7 +9,7 @@ def readNIFTI( file ):
 	image = reader.GetOutput()
 	origin = [ 0, 0, 0 ]
 	qForm = reader.GetQFormMatrix()
-	if not qForm : qForm = vtkMatrix4x4()
+	if not qForm : qForm = vtk.vtkMatrix4x4()
 
 	for i in range( 3 ) :
 		origin[ i ] = qForm.GetElement( i, 3 )
