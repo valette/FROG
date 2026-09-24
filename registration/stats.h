@@ -33,6 +33,8 @@ public:
 
 	std::vector < float > histogram;
 
+	size_t totalSeen;
+
 	void addSlot() {
 
 		this->virtualSize++;
@@ -52,12 +54,17 @@ public:
 	void reset() {
 
 		this->size = 0;
+		this->totalSeen = 0;
 
 	};
 
 	void addSample( const float &sample, const float &weight = 1 ) {
 
-		if ( !this->needsRandom ) {
+		if ( this->samples.empty() ) return;
+
+		this->totalSeen++;
+
+		if ( this->size < (int) this->samples.size() ) {
 
 			this->samples[ this->size ] = sample;
 			this->weights[ this->size ] = weight;
@@ -66,12 +73,15 @@ public:
 
 		}
 
-		if ( this->size == this->samples.size() ) return;
-		float random = ( float ) this->rng() / this->rng.max();
-		if ( random > (float) this->samples.size() / this->virtualSize  ) return;
-		this->samples[ this->size ] = sample;
-		this->weights[ this->size ] = weight;
-		this->size++;
+		// Reservoir sampling (Algorithm R)
+		std::uniform_int_distribution<size_t> dist( 0, this->totalSeen - 1 );
+		size_t j = dist( this->rng );
+		if ( j < this->samples.size() ) {
+
+			this->samples[ j ] = sample;
+			this->weights[ j ] = weight;
+
+		}
 
 	};
 
@@ -91,8 +101,7 @@ public:
 
 	};
 
-	Stats() : c1( 10 ), c2( 300 ), ratio ( 0.5 ), needsRandom( false ),
-		virtualSize( 0 ) {
+	Stats() : size( 0 ), virtualSize( 0 ), totalSeen( 0 ), c1( 10 ), c2( 300 ), ratio ( 0.5 ), needsRandom( false ) {
 
 		this->rng.seed( 0 );
 
