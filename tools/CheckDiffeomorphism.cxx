@@ -10,6 +10,7 @@ Auteur:   Sebastien Valette
 // .NAME VolumeTransform
 // .SECTION Description
 
+#include <iomanip>
 #include <vtkGeneralTransform.h>
 #include <vtkImageData.h>
 #include <vtkImageResize.h>
