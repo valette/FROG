@@ -30,7 +30,7 @@ for i in [ 0, 1, 2 ] :
 
 pattern[ 0 ] = 1
 
-print pattern
+print(pattern)
 checker.SetCheckerPattern( pattern );
 board = checker.Execute( grey, white );
 sitk.WriteImage( board , "output.nii.gz" )
