@@ -10,6 +10,7 @@ Auteur:   Sebastien Valette
 // .NAME PointsTransform
 // .SECTION Description
 
+#include <fstream>
 #include <vtkDataArray.h>
 #include <vtkGeneralTransform.h>
 #include "transformIO.h"
@@ -85,6 +86,16 @@ int main( int argc, char *argv[] ) {
 		transform->TransformPoint( point, newPoint );
 		cout << "Output point : " << newPoint[ 0 ] << " " << newPoint[ 1 ]
 			<< " " << newPoint[ 2 ] << endl;
+
+		if ( outputFile ) {
+			std::ofstream ofs( outputFile );
+			if ( ofs.is_open() ) {
+				ofs << newPoint[ 0 ] << " " << newPoint[ 1 ] << " " << newPoint[ 2 ] << std::endl;
+				ofs.close();
+			} else {
+				std::cerr << "Could not open output file: " << outputFile << std::endl;
+			}
+		}
 
 
 	}
