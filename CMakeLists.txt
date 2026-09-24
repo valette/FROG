@@ -11,7 +11,7 @@ IF (USE_UINT_FOR_POINT_IDS)
 	ADD_DEFINITIONS(-D INT_PTIDS)
 ENDIF (USE_UINT_FOR_POINT_IDS)
 
-find_package(OpenCV REQUIRED)
+find_package(OpenCV REQUIRED COMPONENTS core)
 find_package(VTK REQUIRED COMPONENTS CommonSystem FiltersGeneral FiltersHybrid ImagingColor IOGeometry IOExport IOPLY )
 include_directories(${VTK_INCLUDE_DIRS})
 
