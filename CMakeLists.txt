@@ -19,3 +19,8 @@ ADD_SUBDIRECTORY(match)
 ADD_SUBDIRECTORY(registration)
 ADD_SUBDIRECTORY(tools)
 ADD_SUBDIRECTORY(vtkOpenSURF3D)
+
+include(CTest)
+if(BUILD_TESTING)
+	add_subdirectory(tests)
+endif()
