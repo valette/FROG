@@ -56,6 +56,13 @@ AVERAGEVOLUMES=$ROOT_DIR/bin/AverageVolumes
 DUMMYVOLUMEGENERATOR=$ROOT_DIR/bin/DummyVolumeGenerator
 VOLUMETRANSFORM=$ROOT_DIR/bin/VolumeTransform
 
+# Convert input images to absolute paths
+for (( CUR_IT=0; CUR_IT<${IMG_NUMBER}; CUR_IT++ ))
+do
+	IMG_INPUT[CUR_IT]=$(realpath "${IMG_INPUT[CUR_IT]}")
+done
+RES_FOLDER=$(realpath -m "$RES_FOLDER")
+
 cd $RES_FOLDER
 
 launch "$DUMMYVOLUMEGENERATOR bbox.json $2"

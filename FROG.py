@@ -141,22 +141,28 @@ def getFileList( inputPath ) :
 		for element in f.read().split( "\n" ) :
 			if element.startswith( "#" ) : continue
 			for ext in [ ".nii.gz", ".mhd", ".csv.gz" ] :
-				if element.endswith( ext ) : files.append( join( dirname( inputPath) , element ) )
+				if element.endswith( ext ) : files.append( abspath( join( dirname( inputPath) , element ) ) )
 
 		f.close()
 
 	return files
 
 
-files = getFileList( args.input )
+files = [ abspath( f ) for f in getFileList( args.input ) ]
 if ( args.limit ) : files = files[ :args.limit ]
 print( "There are " + str( len( files ) ) + " files to register : " )
 for f in files : print( f )
 
+maskFiles = []
+if args.masks: maskFiles = [ abspath( f ) for f in getFileList( args.masks ) ]
+if args.landmarks: args.landmarks = abspath( args.landmarks )
+if args.fixedTransformsDirectory: args.fixedTransformsDirectory = abspath( args.fixedTransformsDirectory )
+if args.averageImageDirectory: args.averageImageDirectory = abspath( args.averageImageDirectory )
+
 if args.outputDirectory :
 	if not os.path.exists( args.outputDirectory ):
 		print( "Output directory does not exist, create it : " + args.outputDirectory )
-		os.mkdir( args.outputDirectory )
+		os.makedirs( args.outputDirectory, exist_ok = True )
 	os.chdir( args.outputDirectory )
 
 tempD = 0
@@ -170,9 +176,6 @@ else:
 if args.averageImageOnly:
 	computeAverageImage( files )
 	exit( 0 )
-
-maskFiles = []
-if args.masks: maskFiles = getFileList( args.masks )
 
 
 #### compute input volume keypoints if needed
