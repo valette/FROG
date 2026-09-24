@@ -441,17 +441,16 @@ vtkGeneralTransform *readFrogJSON ( picojson::object root, const char *file ) {
 
 				std::filesystem::path niiFile = nii.get<std::string>();
 				std::filesystem::path path( file );
-				vtkNIFTIImageReader *reader = vtkNIFTIImageReader::New();
-				reader->SetFileName( ( path.parent_path() / niiFile ).c_str() );
+				vtkSmartPointer<vtkNIFTIImageReader> reader = vtkSmartPointer<vtkNIFTIImageReader>::New();
+				reader->SetFileName( ( path.parent_path() / niiFile ).string().c_str() );
 				reader->Update();
 				coefficients->ShallowCopy( reader->GetOutput() );
-				reader->Delete();
-				double Origin[3];
+				double Origin[3] = { 0, 0, 0 };
 				vtkMatrix4x4 *qForm = reader->GetQFormMatrix();
-				if (!qForm) qForm = vtkMatrix4x4::New();
-
-				for( int i = 0; i < 3; i++)
-					Origin[ i ] = qForm->GetElement( i, 3 );
+				if ( qForm ) {
+					for( int i = 0; i < 3; i++ )
+						Origin[ i ] = qForm->GetElement( i, 3 );
+				}
 
 				coefficients->SetOrigin( Origin );
 
