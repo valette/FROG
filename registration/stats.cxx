@@ -41,6 +41,7 @@ void Stats::estimateDistribution() {
 
 		sum2 = std::max( sum2, epsilon);
 		sum3 = std::max( sum3, epsilon);
+		sum4 = std::max( sum4, epsilon);
 		sum5 = std::max( sum5, epsilon);
 		float nc1 = std::max( epsilon, sum1 / sum2 / esp );
 		float nc2 = std::max( epsilon, sum3 / sum4 / esp );
