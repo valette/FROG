@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <array>
 #include <assert.h>
 #include <filesystem>
 #include <iostream>
@@ -381,7 +382,7 @@ double ImageGroup::updateDeformableTransforms( const float alpha ) {
 
 	// substract average displacement on all transforms;
 	const int nImages = this->images.size();
-	float *coeffs[ nImages ];
+	std::vector<float*> coeffs( nImages );
 	int dims[ 3 ];
 	double spacing[ 3 ];
 
@@ -809,7 +810,7 @@ ImageGroup::RANSACResult ImageGroup::RANSACBatch( int imageId, int nIterations, 
 void ImageGroup::setupLinearTransforms() {
 
 	vtkBoundingBox box;
-	float anchors[ this->images.size() ][ 3 ];
+	std::vector<std::array<float, 3>> anchors( this->images.size() );
 	float averageAnchor[ 3 ] = { 0, 0, 0 };
 	float *anchorPosition = this->linearInitializationAnchor;
 
@@ -1366,8 +1367,8 @@ void ImageGroup::readPairs( char *inputFile ) {
 
 		unsigned short nameLength=18;
 		unused = fread( &nameLength, sizeof(unsigned short), 1, file);
-		char name[ nameLength + 1 ];
-		unused = fread( name, sizeof(char), nameLength, file);
+		std::vector<char> name( nameLength + 1 );
+		unused = fread( name.data(), sizeof(char), nameLength, file);
 		name[ nameLength ] = 0;
 		Image *image = &this->images[ i ];
 		unused = fread( image->refTranslation, sizeof( double ), 3, file );
