@@ -3,6 +3,7 @@ import nibabel as nib
 import os
 from os import listdir
 from os.path import abspath, dirname, isdir, join, normpath
+import subprocess
 import tempfile
 import time
 
@@ -55,9 +56,16 @@ def separate():
 def execute( cmd ):
 	start_time = time.time()
 	separate()
-	print( "Executing : " + cmd )
-	code = os.system( cmd )
-	print( "Command : " + cmd )
+	if isinstance( cmd, list ):
+		cmd_list = [ str( x ) for x in cmd ]
+		cmd_str = " ".join( cmd_list )
+	else:
+		cmd_str = cmd
+		cmd_list = cmd.split()
+	print( "Executing : " + cmd_str )
+	result = subprocess.run( cmd_list )
+	code = result.returncode
+	print( "Command : " + cmd_str )
 	print( "Executed in " + str( round( time.time() - start_time ) ) + "s" )
 	print( "Exit code : " + str( code ) )
 	if code : raise( OSError( code ) )
@@ -102,7 +110,7 @@ def computeAverageImage( images ) :
 	print( "Compute average image" )
 	startTime = time.time()
 	dummyBin = join( frogPath, "DummyVolumeGenerator" )
-	execute( " ".join( [ dummyBin, "bbox.json", str( args.imageSpacing ) ] ) )
+	execute( [ dummyBin, "bbox.json", str( args.imageSpacing ) ] )
 	dummyFile = "dummy.mhd";
 	if args.averageImageDirectory:
 		if not os.path.exists( args.averageImageDirectory ):
@@ -119,11 +127,11 @@ def computeAverageImage( images ) :
 		if args.averageImageDirectory:
 			transformedImage = join( args.averageImageDirectory, transformedImage )
 		if args.flipToRAS: image = flipAndSaveToRAS( image, join( tempD.name if tempD else os.getcwd(), "RAS_avg_" + str( i ) + ".nii.gz" ) )
-		execute( " ".join( [ transformBin, image, dummyFile, "-t transforms/" + str( i ) + ".json -o " + transformedImage ] ) )
+		execute( [ transformBin, image, dummyFile, "-t", "transforms/" + str( i ) + ".json", "-o", transformedImage ] )
 		transformedImages.append( transformedImage )
 
 	averageBin = join( frogPath, "AverageVolumes" )
-	execute( " ".join( [ averageBin, " ".join( transformedImages ) ] ) )
+	execute( [ averageBin, *transformedImages ] )
 	print( "Average image computed in " + str( round( time.time() - startTime ) ) + "s" )
 	if args.averageImageDirectory:
 		for file in [ "average.nii.gz", "stdev.nii.gz" ]:
@@ -202,7 +210,7 @@ for index, f in enumerate( files ):
 	if args.cmin != None : surfArgs.extend( [ "-cmin", str( args.cmin ) ] )
 	if args.cmax != None : surfArgs.extend( [ "-cmax", str( args.cmax ) ] )
 	if args.padding != None : surfArgs.extend( [ "-pad", str( args.padding ) ] )
-	execute( " ".join( surfArgs ) )
+	execute( surfArgs )
 
 separate()
 
@@ -214,7 +222,7 @@ else:
 	volumes.write( "\n".join( keypointFiles ) )
 	volumes.close()
 	matchBin = join( frogPath, "match" )
-	matchCmd = " ".join( [ matchBin, volumesList, "-o", pairsFile, "-d", str( args.matchDistance ), "-np", str( args.numberOfPoints ), "-d2", str( args.ratio) ] )
+	matchCmd = [ matchBin, volumesList, "-o", pairsFile, "-d", str( args.matchDistance ), "-np", str( args.numberOfPoints ), "-d2", str( args.ratio ) ]
 	execute( matchCmd )
 
 #### register
@@ -224,13 +232,13 @@ if args.deformableLevels != None : frogArgs.extend( [ "-dl", str( args.deformabl
 if args.RANSACIterations : frogArgs.extend( [ "-ri", str( args.RANSACIterations ) ] )
 if args.linearIterations : frogArgs.extend( [ "-li", str( args.linearIterations ) ] )
 if args.deformableIterations : frogArgs.extend( [ "-di", str( args.deformableIterations ) ] )
-if args.writePairs : frogArgs.append( "-wp 1" )
+if args.writePairs : frogArgs.extend( [ "-wp", "1" ] )
 if args.landmarks : frogArgs.extend( [ "-l", args.landmarks ] )
 if args.gridSpacing : frogArgs.extend( [ "-g", str( args.gridSpacing ) ] )
 if args.invertLandmarks : frogArgs.extend( [ "-il", str( args.invertLandmarks ) ] )
 if args.useSingleJSONTransformFile : frogArgs.extend( [ "-j" ] )
 if args.linearInitializationAnchor : frogArgs.extend( [ "-lanchor", *map( lambda x : str( x ), args.linearInitializationAnchor ) ] )
-execute( " ".join( frogArgs ) )
+execute( frogArgs )
 
 separate()
 print( "Registration done in " + str( round( time.time() - startTime ) ) + "s" )

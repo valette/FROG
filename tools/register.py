@@ -4,6 +4,7 @@ import nibabel as nib
 import os
 from os import listdir
 from os.path import abspath, dirname, join, normpath
+import subprocess
 import time
 
 startTime = time.time()
@@ -35,9 +36,16 @@ def separate():
 def execute( cmd ):
 	start_time = time.time()
 	separate()
-	print( "Executing : " + cmd )
-	code = os.system( cmd )
-	print( "Command : " + cmd )
+	if isinstance( cmd, list ):
+		cmd_list = [ str( x ) for x in cmd ]
+		cmd_str = " ".join( cmd_list )
+	else:
+		cmd_str = cmd
+		cmd_list = cmd.split()
+	print( "Executing : " + cmd_str )
+	result = subprocess.run( cmd_list )
+	code = result.returncode
+	print( "Command : " + cmd_str )
 	print( "Executed in " + str( round( time.time() - start_time ) ) + "s" )
 	print( "Exit code : " + str( code ) )
 	if code : raise( OSError( code ) )
@@ -68,7 +76,7 @@ if not args.inputVolume.endswith( '.csv.gz' ) :
 	surfArgs = [ surfBin, inputVolume, "-s", str( args.spacing ), "-t", str( args.threshold ), "-n", str( args.numberOfPoints )]
 	if args.cmin != None : surfArgs.extend( [ "-cmin", str( args.cmin ) ] )
 	if args.cmax != None : surfArgs.extend( [ "-cmax", str( args.cmax ) ] )
-	execute( " ".join( surfArgs ) )
+	execute( surfArgs )
 	inputPoints = join( cwd, "points.csv.gz" )
 else:
 	print ( "Input is a .csv.gz file, no need for extraction" )
@@ -80,18 +88,18 @@ for pt in points : volumes.write( join( args.inputDir, pt ) + "\n" )
 volumes.write( inputPoints )
 volumes.close()
 matchBin = join( frogPath, "match" )
-matchCmd = matchBin + " " + volumesList + " -o pairs.bin -d 1"
-if not args.all : matchCmd += " -targ " + str( len( points ) )
+matchCmd = [ matchBin, volumesList, "-o", "pairs.bin", "-d", "1" ]
+if not args.all : matchCmd.extend( [ "-targ", str( len( points ) ) ] )
 execute( matchCmd )
 
 #### register
 frogBin = join( frogPath, "frog" )
-frogArgs = [ frogBin, "pairs.bin", "-j -fd", args.inputDir + "/transforms" ]
+frogArgs = [ frogBin, "pairs.bin", "-j", "-fd", args.inputDir + "/transforms" ]
 if args.landmarks : frogArgs.extend( [ "-l", args.landmarks ] )
 if args.nDeformableLevels != None : frogArgs.extend( [ "-dl", str( args.nDeformableLevels ) ] )
 if args.nLinearIterations : frogArgs.extend( [ "-li", str( args.nLinearIterations ) ] )
 if not args.all : frogArgs.extend( [ "-fi", str( len( points ) ) ] )
-execute( " ".join( frogArgs ) )
+execute( frogArgs )
 
 separate()
 print( "Registration done in " + str( round( time.time() - startTime ) ) + "s" )

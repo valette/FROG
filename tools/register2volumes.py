@@ -3,6 +3,7 @@ import os
 import sys
 from os import listdir
 from os.path import abspath, dirname, isdir, join, normpath
+import subprocess
 import tempfile
 import time
 
@@ -39,9 +40,16 @@ def separate():
 def execute( cmd ):
 	start_time = time.time()
 	separate()
-	print( "Executing : " + cmd )
-	code = os.system( cmd )
-	print( "Command : " + cmd )
+	if isinstance( cmd, list ):
+		cmd_list = [ str( x ) for x in cmd ]
+		cmd_str = " ".join( cmd_list )
+	else:
+		cmd_str = cmd
+		cmd_list = cmd.split()
+	print( "Executing : " + cmd_str )
+	result = subprocess.run( cmd_list )
+	code = result.returncode
+	print( "Command : " + cmd_str )
 	print( "Executed in " + str( round( time.time() - start_time ) ) + "s" )
 	print( "Exit code : " + str( code ) )
 	if code : raise( OSError( code ) )
@@ -74,19 +82,17 @@ if len( masks ) :
 if args.deformableLevels : frogArgs.extend( [ "-dl", str( args.deformableLevels ) ] )
 if args.linearIterations : frogArgs.extend( [ "-li", str( args.linearIterations ) ] )
 if args.deformableIterations : frogArgs.extend( [ "-di", str( args.deformableIterations ) ] )
-if args.writePairs : frogArgs.append( "-wp" )
+if args.writePairs : frogArgs.extend( [ "-wp", "1" ] )
 if args.landmarks : frogArgs.extend( [ "-l", args.landmarks ] )
 if args.gridSpacing : frogArgs.extend( [ "-g", str( args.gridSpacing ) ] )
-execute( " ".join( frogArgs ) )
+execute( frogArgs )
 
 
 separate()
 transformBin = join( rootPath, "bin/VolumeTransform" )
-transformArgs = [ transformBin, files[ 0 ], files[ 1 ] ]
-transformArgs.append( "-t transforms/0.json" )
-transformArgs.append( "-ti transforms/1.json" )
+transformArgs = [ transformBin, files[ 0 ], files[ 1 ], "-t", "transforms/0.json", "-ti", "transforms/1.json" ]
 if ( args.output ) : transformArgs.extend( [ "-o", args.output ] )
-execute( " ".join( transformArgs ) )
+execute( transformArgs )
 
 separate()
 print( "All done in " + str( round( time.time() - startTime ) ) + "s" )
