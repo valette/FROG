@@ -539,13 +539,21 @@ void ImageGroup::saveErrorMaps() {
 			if ( sWeight == 0 ) continue;
 			// add point displacement to mean image
 			int id = 0;
+			bool inside = true;
 
 			for ( int k = 0; k < 3; k++ ) {
 
 				float coord = ( pos[ k ] - origin[ k ] ) / spacing[ k ];
-				id += floor( coord ) * increments[ k ];
+				int intCoord = floor( coord );
+				if ( intCoord < 0 || intCoord >= dims[ k ] ) {
+					inside = false;
+					break;
+				}
+				id += intCoord * increments[ k ];
 
 			}
+
+			if ( !inside ) continue;
 
 			gradient[ id  + 3 ] += sWeight;
 			for ( int k = 0; k < 3; k++ ) gradient[ id  + k ] += sDisp[ k ];
