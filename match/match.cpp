@@ -548,7 +548,7 @@ int main( int argc, char *argv[] ) {
 
 			points->erase (pend, points->end());
 
-			for ( auto point : *points ) {
+			for ( auto &point : *points ) {
 
 				if ( transform ) {
 
