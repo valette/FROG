@@ -73,5 +73,6 @@ int main( int argc, char *argv[] ) {
 	writer->SetFileName( "dummy.mhd" );
 	writer->Write();
 	Volume->Delete();
+	writer->Delete();
 
 }

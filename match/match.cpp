@@ -183,30 +183,34 @@ Points* readBinary(string filename) {
 
 	FILE* file=fopen(filename.c_str(),"rb");
 	Points* points = new Points();
+	if ( !file ) {
+		cerr << "Could not open " << filename << endl;
+		return points;
+	}
 
-	while(!feof(file)) {
+	while( true ) {
 
 		Point row;
 		float valF;
-		int unused;
-		unused = fread(&valF, sizeof(float), 1, file);
+		if ( fread(&valF, sizeof(float), 1, file) != 1 ) break;
 		row.coordinates[ 0 ] = valF;
-		unused = fread(&valF, sizeof(float), 1, file);
+		if ( fread(&valF, sizeof(float), 1, file) != 1 ) break;
 		row.coordinates[ 1 ] = valF;
-		unused = fread(&valF, sizeof(float), 1, file);
+		if ( fread(&valF, sizeof(float), 1, file) != 1 ) break;
 		row.coordinates[ 2 ] = valF;
-		unused = fread(&valF, sizeof(float), 1, file);
+		if ( fread(&valF, sizeof(float), 1, file) != 1 ) break;
 		row.scale = valF;
-		unused = fread(&valF, sizeof(float), 1, file);
+		if ( fread(&valF, sizeof(float), 1, file) != 1 ) break;
 		row.laplacianSign = valF;
-		unused = fread(&valF, sizeof(float), 1, file);
+		if ( fread(&valF, sizeof(float), 1, file) != 1 ) break;
 		row.response = valF;
 		row.desc.resize(48);
-		unused = fread(row.desc.data(), sizeof(float), 48, file);
+		if ( fread(row.desc.data(), sizeof(float), 48, file) != 48 ) break;
 		points->push_back(row);
 
 	}
 
+	fclose(file);
 	return points;
 }
 
@@ -746,5 +750,14 @@ int main( int argc, char *argv[] ) {
 
 	fclose(file);
 	cout << "Output file : " << outfilename.str() << endl;
+
+	for ( auto i = 0; i < nb; i++ ) {
+		for ( auto j = 0; j < nb; j++ ) {
+			if ( pairs[i][j] ) delete pairs[i][j];
+		}
+	}
+	for ( auto p : allPoints ) {
+		if ( p ) delete p;
+	}
 
 }

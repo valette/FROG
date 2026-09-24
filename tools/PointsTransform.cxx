@@ -79,5 +79,6 @@ int main( int argc, char *argv[] ) {
 
 
 	if ( point ) delete [] point;
+	transform->Delete();
 
 }

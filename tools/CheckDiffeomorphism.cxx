@@ -35,6 +35,7 @@ int main( int argc, char *argv[] ) {
 	vtkImageData *image = imageReader->GetOutput();
 
 	vtkGeneralTransform *transform = readTransform( argv[ 2 ] );
+	vtkImageResize *resize = nullptr;
 
 	if ( argc > 3 ) {
 
@@ -43,7 +44,7 @@ int main( int argc, char *argv[] ) {
 		if ( sp > 0 ) {
 
 			cout << "Resizing image with spacing : " << sp << endl;
-			vtkImageResize *resize = vtkImageResize::New();
+			resize = vtkImageResize::New();
 			resize->SetResizeMethodToOutputSpacing();
 			resize->SetOutputSpacing( sp, sp, sp );
 			resize->SetInputData( image );
@@ -87,6 +88,10 @@ int main( int argc, char *argv[] ) {
 	cout << n << " negative jacobian determinant values ("
 		<< std::setprecision( 3 ) << (float) 100.0 * n / 
 		( dimensions[ 0 ] * dimensions[ 1 ] * dimensions[ 2 ] ) << "%) " << endl;;
+
+	imageReader->Delete();
+	transform->Delete();
+	if ( resize ) resize->Delete();
 
 	return n > 0;
 

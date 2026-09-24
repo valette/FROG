@@ -65,5 +65,8 @@ int main( int argc, char *argv[] ) {
 	timer->StopTimer();
 	std::cout << "Transform computed in " << timer->GetElapsedTime() << "s" << std::endl;
 
+	timer->Delete();
+	polyDataTransform->Delete();
+	transform->Delete();
 
 }
