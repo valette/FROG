@@ -62,7 +62,7 @@ def execute( cmd ):
 	print( "Exit code : " + str( code ) )
 	if code : raise( OSError( code ) )
 
-def flipAndSaveToRAS( filename ):
+def flipAndSaveToRAS( filename, output_name = None ):
     
     #Recover the image object
     imageObj = nib.load( filename )
@@ -89,11 +89,12 @@ def flipAndSaveToRAS( filename ):
         #Set Qcode to 1 that the Qform matrix can be used into the further processing
         img_conv.header['qform_code'] = 1
         
+        targetFile = output_name if output_name else RASFile
         #Save the flipped image
-        nib.save(img_conv, RASFile )
+        nib.save(img_conv, targetFile )
 
         print("The new orientation is now : ", NewOrientation)
-        return RASFile
+        return targetFile
 
 def computeAverageImage( images ) :
 	if not args.imageSpacing : return
@@ -117,7 +118,7 @@ def computeAverageImage( images ) :
 		transformedImage = "transformed" + str( i ) + ".nii.gz"
 		if args.averageImageDirectory:
 			transformedImage = join( args.averageImageDirectory, transformedImage )
-		if args.flipToRAS: image = flipAndSaveToRAS( image )
+		if args.flipToRAS: image = flipAndSaveToRAS( image, join( tempD.name if tempD else os.getcwd(), "RAS_avg_" + str( i ) + ".nii.gz" ) )
 		execute( " ".join( [ transformBin, image, dummyFile, "-t transforms/" + str( i ) + ".json -o " + transformedImage ] ) )
 		transformedImages.append( transformedImage )
 
@@ -194,7 +195,7 @@ for index, f in enumerate( files ):
 		print( "Points file ", fullPointsFile, "already exists, skipping" )
 		continue
 	print ( "Extracting points from " + f )
-	if args.flipToRAS: f = flipAndSaveToRAS( f )
+	if args.flipToRAS: f = flipAndSaveToRAS( f, join( tempD.name if tempD else os.getcwd(), "RAS_" + str( index ) + ".nii.gz" ) )
 	surfBin = join( frogPath, "surf3d" )
 	surfArgs = [ surfBin, f, "-s", str( args.spacing ), "-t", str( args.threshold ), "-n", str( args.numberOfPoints ), "-o", pointsFile ]
 	if len( maskFiles ) : surfArgs.extend( [ "-m", maskFiles[ index ] ] )
