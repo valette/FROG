@@ -141,7 +141,7 @@ int main( int argc, char *argv[] ) {
 	Timer->StartTimer();
 
 	// write output
-	vtkImageWriter *writer;
+	vtkImageWriter *writer = nullptr;
 
 	if ( outputFile ) {
 
@@ -171,9 +171,15 @@ int main( int argc, char *argv[] ) {
 				writer = vtkNIFTIImageWriter::New();
 
 			} else {
-				std::cout << "not able to read  " << outputFile << std::endl;
+				std::cerr << "Unsupported output extension for file: " << outputFile << " (expected .mhd or .nii.gz)" << std::endl;
+				return 1;
 			}
 
+		}
+
+		if ( !writer ) {
+			std::cerr << "Error: failed to initialize writer for " << outputFile << std::endl;
+			return 1;
 		}
 
 		writer->SetFileName( outputFile );
