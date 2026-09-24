@@ -13,6 +13,8 @@ float Stats::epsilon = 1e-6;
 
 void Stats::estimateDistribution() {
 
+	if ( this->size == 0 ) return;
+
 	const float esp = 1.59576912160573;
 	int iteration = 0;
 	const float epsilon = Stats::epsilon;
@@ -72,6 +74,11 @@ void Stats::estimateDistribution() {
 
 void Stats::displayParameters() {
 
+	if ( this->size == 0 ) {
+		std::cout << "nSamples=0" << std::endl;
+		return;
+	}
+
 	int s = this->size;
 	std::cout << "c1=" << c1 << ",";
 	std::cout << "c2=" << c2 << ",";
@@ -120,6 +127,11 @@ void Stats::saveSamples( const char *file, int subsampling ) {
 }
 
 void Stats::getHistogram( float binSize ) {
+
+	if ( this->size == 0 ) {
+		this->histogram.clear();
+		return;
+	}
 
 	float max = *std::max_element( samples.begin(), samples.begin() + this->size );
 	int size = round( max / binSize ) + 1;
