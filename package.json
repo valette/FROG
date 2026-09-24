@@ -1,7 +1,7 @@
 {
   "name": "FROG",
   "description": "a library to perform SURF-based registration",
-  "license": "GPL-2.0",
+  "license": "CECILL-B",
   "version": "0.0.1",
   "dependencies": {
     "async": "1.5.2",
