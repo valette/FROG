@@ -29,7 +29,7 @@ using namespace picojson;
 using std::cout;
 using std::endl;
 
-vtkSmartPointer<vtkPolyData> ReadPolyData(const std::string& fileName) {
+inline vtkSmartPointer<vtkPolyData> ReadPolyData(const std::string& fileName) {
     vtkSmartPointer<vtkPolyData> polyData;
     std::string extension = fileName.substr(fileName.find_last_of(".") + 1);
 
@@ -66,7 +66,7 @@ vtkSmartPointer<vtkPolyData> ReadPolyData(const std::string& fileName) {
     return polyData;
 }
 
-bool WritePolyData( vtkSmartPointer<vtkPolyData> polyData, const std::string& fileName) {
+inline bool WritePolyData( vtkSmartPointer<vtkPolyData> polyData, const std::string& fileName) {
     std::string extension = fileName.substr(fileName.find_last_of(".") + 1);
 
     if (extension == "ply") {
@@ -102,7 +102,7 @@ bool WritePolyData( vtkSmartPointer<vtkPolyData> polyData, const std::string& fi
     return true;
 }
 
-void writeTFM( vtkGeneralTransform *generalTransform, const char *fileName ) {
+inline void writeTFM( vtkGeneralTransform *generalTransform, const char *fileName ) {
 
 	fstream fs;
 	fs.open( fileName, fstream::out | fstream::trunc );
@@ -163,7 +163,7 @@ void writeTFM( vtkGeneralTransform *generalTransform, const char *fileName ) {
 
 }
 
-void writeFrogJSON( vtkGeneralTransform *generalTransform, const char *fileName, bool compact = false ) {
+inline void writeFrogJSON( vtkGeneralTransform *generalTransform, const char *fileName, bool compact = false ) {
 
 	picojson::array transforms;
 	int niiCounter = 0;
@@ -260,7 +260,7 @@ void writeFrogJSON( vtkGeneralTransform *generalTransform, const char *fileName,
 
 }
 
-vtkGeneralTransform *readTFM ( const char *fileName ) {
+inline vtkGeneralTransform *readTFM ( const char *fileName ) {
 
 	std::ifstream file( fileName, std::ios::in );
 
@@ -367,7 +367,7 @@ vtkGeneralTransform *readTFM ( const char *fileName ) {
 
 }
 
-vtkGeneralTransform *readFrogJSON ( picojson::object root, const char *file ) {
+inline vtkGeneralTransform *readFrogJSON ( picojson::object root, const char *file ) {
 
 	vtkGeneralTransform *transform = vtkGeneralTransform::New();
 	transform->PostMultiply();
@@ -469,7 +469,7 @@ vtkGeneralTransform *readFrogJSON ( picojson::object root, const char *file ) {
 
 }
 
-vtkGeneralTransform *readJSONfromString ( const char *str, const char *file ) {
+inline vtkGeneralTransform *readJSONfromString ( const char *str, const char *file ) {
 
 	picojson::value v;
 	std::string err;
@@ -500,7 +500,7 @@ vtkGeneralTransform *readJSONfromString ( const char *str, const char *file ) {
 
 }
 
-vtkGeneralTransform *readJSON( const char *fileName ) {
+inline vtkGeneralTransform *readJSON( const char *fileName ) {
 
 	std::ifstream file( fileName );
 	std::string str( ( std::istreambuf_iterator< char >( file ) ),
@@ -511,7 +511,7 @@ vtkGeneralTransform *readJSON( const char *fileName ) {
 }
 
 
-vtkGeneralTransform *readTransform( const char *file ) {
+inline vtkGeneralTransform *readTransform( const char *file ) {
 
 	char fin[6];
 	char filename[1000];
