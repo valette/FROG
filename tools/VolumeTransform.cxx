@@ -43,6 +43,10 @@ int main( int argc, char *argv[] ) {
 	while ( argumentsIndex < argc ) {
 
 		char * key = argv[ argumentsIndex ];
+		if ( argumentsIndex + 1 >= argc ) {
+			std::cerr << "Option " << key << " requires a value." << std::endl;
+			return 1;
+		}
 		char * value = argv[ argumentsIndex + 1 ];
 
 		if ( strcmp( key ,"-b" ) == 0 ) {

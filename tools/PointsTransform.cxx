@@ -31,6 +31,32 @@ int main( int argc, char *argv[] ) {
 	while ( argumentsIndex < argc ) {
 
 		char * key = argv[ argumentsIndex ];
+
+		if ( strcmp( key ,"-p" ) == 0 ) {
+
+			if ( argumentsIndex + 3 >= argc ) {
+				std::cerr << "Option -p requires 3 coordinates (x y z)." << std::endl;
+				return 1;
+			}
+
+			point = new double[ 3 ];
+
+			for ( int i = 0; i < 3; i++ ) {
+
+				point[ i ] = atof( argv[ argumentsIndex + 1 + i ] );
+
+			}
+
+			argumentsIndex += 4;
+			continue;
+
+		}
+
+		if ( argumentsIndex + 1 >= argc ) {
+			std::cerr << "Option " << key << " requires a value." << std::endl;
+			return 1;
+		}
+
 		char * value = argv[ argumentsIndex + 1 ];
 
 		if ( strcmp( key ,"-t" ) == 0 ) {
@@ -45,20 +71,6 @@ int main( int argc, char *argv[] ) {
 
 		if ( strcmp( key ,"-o" ) == 0 ) {
 			outputFile = value;
-		}
-
-		if ( strcmp( key ,"-p" ) == 0 ) {
-
-			point = new double[ 3 ];
-
-			for ( int i = 0; i < 3; i++ ) {
-
-				point[ i ] = atof( argv[ argumentsIndex + 1 + i ] );
-
-			}
-
-			argumentsIndex += 2;
-
 		}
 
 		argumentsIndex += 2;

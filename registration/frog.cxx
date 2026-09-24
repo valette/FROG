@@ -74,8 +74,31 @@ int main( int argc, char *argv[] ) {
 	while (argumentsIndex < argc) {
 
 		char* key = argv[argumentsIndex];
+
+		if ( strcmp( key, "-j" ) == 0 ) {
+			group.writeSingleFileTransforms = true;
+			argumentsIndex += 1;
+			continue;
+		}
+
+		if ( strcmp( key, "-lanchor" ) == 0 ) {
+			if ( argumentsIndex + 3 >= argc ) {
+				std::cerr << "Option -lanchor requires 3 coordinate values." << std::endl;
+				return 1;
+			}
+			for ( int i = 0; i < 3; i++ )
+				group.linearInitializationAnchor[ i ] =
+					atof( argv[argumentsIndex + 1 + i ] );
+			argumentsIndex += 4;
+			continue;
+		}
+
+		if ( argumentsIndex + 1 >= argc ) {
+			std::cerr << "Option " << key << " requires a value." << std::endl;
+			return 1;
+		}
+
 		char *value = argv[argumentsIndex + 1];
-		int increment = 2;
 
 		if ( strcmp( key, "-da" ) == 0) {
 			group.deformableAlpha = atof( value );
@@ -123,13 +146,6 @@ int main( int argc, char *argv[] ) {
 
 		if ( strcmp( key, "-il" ) == 0 ) {
 			group.invertLandmarksCoordinates = atoi( value );
-		}
-
-		if ( strcmp( key, "-lanchor" ) == 0) {
-			increment = 4;
-			for ( int i = 0; i < 3; i++ )
-				group.linearInitializationAnchor[ i ] =
-					atof( argv[argumentsIndex + 1 + i ] );
 		}
 
 		if ( strcmp( key, "-la" ) == 0) {
@@ -204,12 +220,7 @@ int main( int argc, char *argv[] ) {
 			group.writePairs = atoi( value );
 		}
 
-		if ( strcmp( key, "-j" ) == 0 ) {
-			group.writeSingleFileTransforms = true;
-			increment = 1;
-		}
-
-		argumentsIndex += increment;
+		argumentsIndex += 2;
 
 	}
 

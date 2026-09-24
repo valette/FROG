@@ -372,6 +372,30 @@ int main( int argc, char *argv[] ) {
 	while (argumentsIndex < argc) {
 
 		char* key = argv[argumentsIndex];
+
+		if (strcmp(key, "-all") == 0) {
+			matchAll = true;
+			argumentsIndex += 1;
+			continue;
+		}
+
+		if (strcmp(key, "-p") == 0) {
+			writePoints = true;
+			argumentsIndex += 1;
+			continue;
+		}
+
+		if (strcmp(key, "-sym") == 0) {
+			symFlag = true;
+			argumentsIndex += 1;
+			continue;
+		}
+
+		if (argumentsIndex + 1 >= argc) {
+			cerr << "Option " << key << " requires a value." << endl;
+			return 1;
+		}
+
 		char *value = argv[argumentsIndex + 1];
 
 		if (strcmp(key, "-n") == 0) {
@@ -410,21 +434,9 @@ int main( int argc, char *argv[] ) {
 			outputFileName = value;
 		}
 
-		if (strcmp(key, "-all") == 0) {
-			matchAll = true;
-		}
-
-		if (strcmp(key, "-p") == 0) {
-			writePoints = true;
-		}
-
 		if (strcmp(key, "-anat") == 0){
 			anatVal = atof(value);
 		}
-		if (strcmp(key, "-sym") == 0){
-			symFlag = true;
-			argumentsIndex-=1;
-        }
 
 		if (strcmp(key, "-targ") == 0){
 			target = atoi(value);
