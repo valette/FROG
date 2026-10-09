@@ -71,24 +71,24 @@ def execute( cmd ):
 	if code : raise( OSError( code ) )
 
 def flipAndSaveToRAS( filename, output_name = None ):
-    
+
     #Recover the image object
     imageObj = nib.load( filename )
-    
+
     #Get the current orientation
     CurrentOrientation = nib.aff2axcodes(imageObj.affine)
     print("The current orientation is : ", CurrentOrientation)
-    
+
     #Check if the current orientation is already RAS+
     if CurrentOrientation == ('R', 'A', 'S') :
-        
+
         print("Image already recorded into the RAS+ orientation, nothing to do")
         return filename
-        
+
     else :
         #Flip the image to RAS
         flippedImage = nib.as_closest_canonical(imageObj)
-                
+
         ##Check the new orientation
         NewOrientation = nib.aff2axcodes(flippedImage.affine)
         img_data = flippedImage.get_fdata()
@@ -96,7 +96,7 @@ def flipAndSaveToRAS( filename, output_name = None ):
 
         #Set Qcode to 1 that the Qform matrix can be used into the further processing
         img_conv.header['qform_code'] = 1
-        
+
         targetFile = output_name if output_name else RASFile
         #Save the flipped image
         nib.save(img_conv, targetFile )
@@ -165,7 +165,6 @@ for f in files : print( f )
 maskFiles = []
 if args.masks: maskFiles = [ abspath( f ) for f in getFileList( args.masks ) ]
 if args.landmarks: args.landmarks = abspath( args.landmarks )
-if args.fixedTransformsDirectory: args.fixedTransformsDirectory = abspath( args.fixedTransformsDirectory )
 if args.averageImageDirectory: args.averageImageDirectory = abspath( args.averageImageDirectory )
 
 if args.outputDirectory :
